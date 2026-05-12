@@ -54,17 +54,22 @@ ${customInstructions}
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
-      tools: [
-        {
-          googleSearchRetrieval: {},
-        },
-      ],
       config: {
         systemInstruction,
         temperature: 0.7,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        // @ts-ignore: v2 SDK tools type may not be updated in local types yet
+        tools: [
+          {
+            googleSearchRetrieval: {},
+          },
+        ],
       }
     });
+
+    if (!response.text) {
+      throw new Error("AI 응답이 비어있습니다.");
+    }
 
     const result = JSON.parse(response.text);
     let finalContent = result.content;

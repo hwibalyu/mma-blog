@@ -71,7 +71,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             strong: ({ node, ...props }) => <strong className="font-black text-black dark:text-white" {...props} />,
             img: ({ node, src, ...props }) => {
               let finalSrc = src;
-              if (src && !src.startsWith('http') && !src.startsWith('/')) {
+              if (typeof src === 'string' && !src.startsWith('http') && !src.startsWith('/')) {
                 const cleanSrc = src.replace(/^\.\//, '');
                 finalSrc = `/api/assets/${post.id}/${cleanSrc}`;
               }
