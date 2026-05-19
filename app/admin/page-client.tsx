@@ -139,7 +139,7 @@ function renderTable(node: MarkdownNode) {
     .join("")}</tbody></table>`;
 }
 
-function renderInlineNodes(nodes: MarkdownNode[]) {
+function renderInlineNodes(nodes: MarkdownNode[]): string {
   return nodes
     .map((node) => {
       switch (node.type) {
