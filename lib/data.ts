@@ -80,7 +80,7 @@ export function getPost(id: string): Post | undefined {
       tags: matterResult.data.tags || [],
       raw: fileContents,
     };
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

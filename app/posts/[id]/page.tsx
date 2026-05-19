@@ -59,17 +59,37 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
           components={{
-            p: ({ node, ...props }) => <p className="my-6 font-serif text-lg md:text-xl leading-relaxed text-black/80 dark:text-white/80 break-keep" {...props} />,
-            h1: ({ node, ...props }) => <h1 className="text-4xl font-black mt-12 mb-6" {...props} />,
-            h2: ({ node, ...props }) => <h2 className="text-3xl font-black mt-10 mb-5" {...props} />,
-            h3: ({ node, ...props }) => <h3 className="text-2xl font-black mt-8 mb-4" {...props} />,
-            blockquote: ({ node, ...props }) => (
+            p: (props) => <p className="my-6 font-serif text-lg md:text-xl leading-relaxed text-black/80 dark:text-white/80 break-keep" {...props} />,
+            h1: (props) => <h1 className="text-4xl md:text-5xl font-black mt-16 mb-8 tracking-tight" {...props} />,
+            h2: (props) => <h2 className="text-3xl md:text-4xl font-black mt-14 mb-6 tracking-tight border-b border-black/10 dark:border-white/10 pb-2" {...props} />,
+            h3: (props) => <h3 className="text-2xl md:text-3xl font-black mt-12 mb-5 tracking-tight" {...props} />,
+            h4: (props) => <h4 className="text-xl md:text-2xl font-bold mt-10 mb-4 tracking-tight text-black/90 dark:text-white/90" {...props} />,
+            h5: (props) => <h5 className="text-lg md:text-xl font-bold mt-8 mb-3" {...props} />,
+            blockquote: (props) => (
               <blockquote className="border-l-4 border-accent pl-6 my-8 py-2 font-serif italic text-xl text-black/60 dark:text-white/60 break-keep" {...props} />
             ),
-            li: ({ node, ...props }) => <li className="my-2 font-serif text-lg md:text-xl leading-relaxed text-black/80 dark:text-white/80 break-keep list-disc ml-6" {...props} />,
-            ol: ({ node, ...props }) => <ol className="my-6 list-decimal ml-6" {...props} />,
-            strong: ({ node, ...props }) => <strong className="font-black text-black dark:text-white" {...props} />,
-            img: ({ node, src, ...props }) => {
+            li: (props) => <li className="my-2 font-serif text-lg md:text-xl leading-relaxed text-black/80 dark:text-white/80 break-keep list-disc ml-6" {...props} />,
+            ol: (props) => <ol className="my-6 list-decimal ml-6" {...props} />,
+            strong: (props) => <strong className="font-black text-black dark:text-white" {...props} />,
+            mark: (props) => (
+              <mark
+                className="rounded-sm bg-[#ffe680] px-1 py-0.5 text-black shadow-[inset_0_-0.45em_0_rgba(255,210,63,0.55)] dark:bg-[#f3d35b] dark:text-black dark:shadow-[inset_0_-0.45em_0_rgba(255,232,130,0.45)]"
+                {...props}
+              />
+            ),
+            u: (props) => (
+              <u
+                className="decoration-2 underline underline-offset-4 decoration-accent text-black dark:text-white"
+                {...props}
+              />
+            ),
+            ins: (props) => (
+              <ins
+                className="no-underline border-b-2 border-accent/70 pb-0.5 text-black dark:text-white"
+                {...props}
+              />
+            ),
+            img: ({ src, ...props }) => {
               let finalSrc = src;
               if (typeof src === 'string' && !src.startsWith('http') && !src.startsWith('/')) {
                 const cleanSrc = src.replace(/^\.\//, '');

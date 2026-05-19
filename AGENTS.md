@@ -3,3 +3,27 @@
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+# Local Skills
+
+## `fact-research`
+
+When the user asks for any new MMA article, event analysis, rumor check, ranking piece, fighter profile, or time-sensitive revision, read and follow `skills/fact-research/SKILL.md` before writing.
+Treat fact collection as a required first phase, not an optional polish step.
+For meaningful MMA writing, research should cover official records/results plus broad media context when available, including domestic and international news, columns, interviews, and YouTube/video material.
+
+## `article-edit`
+
+When the user asks to revise, polish, expand, shorten, retitle, or structurally edit an existing MMA article, read and follow `skills/article-edit/SKILL.md` before making changes.
+Treat requests mentioning `$article-edit`, `article-edit`, a post slug, a `content/posts/...` path, or a `/posts/...` URL as article editing requests.
+When the user specifies a target article and asks for changes, update the real markdown file directly instead of only proposing copy in chat, unless the user explicitly asks for a draft only.
+When writing or editing articles, increase emphasis density so key arguments, fighter names, turning points, and conclusions are visually highlighted with bold text, quotes, and short lists instead of long flat paragraphs.
+If the article involves live topics, recent events, rankings, rumors, or disputed claims, run `fact-research` first and treat its output as a core dependency.
+
+## `article-create`
+
+When the user asks to write, create, draft, publish, or generate a new MMA column/article/post, read and follow `skills/article-create/SKILL.md` before making changes.
+Treat requests like `컬럼 작성해줘`, `새 포스트 써줘`, `기사 생성해줘`, `주제: ...`, or any request to create a new post under `content/posts/` as article creation requests.
+When creating a new article, write the real markdown file directly under `content/posts/<slug>/index.md`.
+Do not leave image slots as placeholder-only by default. Generate real local image assets for the post unless the user explicitly asks for text-only or placeholder-only output.
+Before drafting the article, run `fact-research` and use it as the first major phase of the workflow.

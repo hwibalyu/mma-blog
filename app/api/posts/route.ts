@@ -3,6 +3,10 @@ import { getPosts } from "@/lib/data";
 import fs from "fs";
 import path from "path";
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
 export async function GET() {
   const posts = getPosts();
   return NextResponse.json(posts);
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
     fs.writeFileSync(path.join(newPostDir, "index.md"), content, "utf8");
 
     return NextResponse.json({ success: true, id });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">ZFN 04 Blood Moon Poster Placeholder</title>
+  <desc id="desc">A placeholder illustration for the ZFN 04 Blood Moon article.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#120b0d"/>
+      <stop offset="55%" stop-color="#3a0f14"/>
+      <stop offset="100%" stop-color="#8f1d2c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1180" cy="240" r="130" fill="#d94b56" opacity="0.9"/>
+  <circle cx="1180" cy="240" r="165" fill="none" stroke="#f4c6ca" stroke-opacity="0.25" stroke-width="2"/>
+  <rect x="110" y="130" width="700" height="540" rx="28" fill="none" stroke="#f2d6d9" stroke-opacity="0.2" stroke-width="3"/>
+  <text x="110" y="250" fill="#f7e9eb" font-family="Arial, sans-serif" font-size="96" font-weight="700">ZFN 04</text>
+  <text x="110" y="340" fill="#f1b6bd" font-family="Arial, sans-serif" font-size="54" font-weight="700">BLOOD MOON</text>
+  <text x="110" y="450" fill="#f7e9eb" font-family="Arial, sans-serif" font-size="38">Main event analysis placeholder visual</text>
+  <text x="110" y="510" fill="#f7e9eb" font-family="Arial, sans-serif" font-size="38">Hwang In-soo, Choi Jun-seo, Bae Myung-ho</text>
+  <text x="110" y="650" fill="#f1b6bd" font-family="Arial, sans-serif" font-size="32">Replace with event poster or cage-side photo if desired</text>
+</svg>
