@@ -2,6 +2,8 @@ import { getPosts } from "@/lib/data";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 const categoryMap: Record<string, string> = {
   "column": "컬럼",
   "global-column": "해외컬럼",

@@ -331,6 +331,7 @@ export default function AdminDashboardClient({
   const [selectedId, setSelectedId] = useState<string | null>(initialPosts[0]?.id ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [generatePrompt, setGeneratePrompt] = useState("");
   const [includeImages, setIncludeImages] = useState(true);
@@ -367,23 +368,40 @@ export default function AdminDashboardClient({
   }
 
   async function handleDelete(post: Post) {
-    const shouldDelete = window.confirm(`"${post.title}" 글을 정말 삭제할까요?`);
+    const shouldDelete = window.confirm(
+      `"${post.title}" 글을 정말 삭제할까요?\n운영 서버 폴더도 먼저 삭제한 뒤 로컬 글을 지웁니다.`,
+    );
     if (!shouldDelete) return;
 
     setIsDeletingId(post.id);
 
     try {
+      const syncDeleteResponse = await fetch("/api/admin/inject-post", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: post.id }),
+      });
+
+      const syncDeleteData = (await syncDeleteResponse.json()) as { error?: string };
+      if (!syncDeleteResponse.ok) {
+        throw new Error(syncDeleteData.error || "운영 서버 삭제에 실패했습니다.");
+      }
+
       const response = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "삭제에 실패했습니다.");
       }
 
-      setStatus(`"${post.title}" 글을 삭제했습니다.`);
+      setStatus(`"${post.title}" 글을 로컬과 운영 서버에서 삭제했습니다.`);
       await fetchPosts(selectedId === post.id ? null : selectedId);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.");
+      const message = error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.";
+      alert(message);
+      setStatus(message);
     } finally {
       setIsDeletingId(null);
     }
@@ -415,6 +433,42 @@ export default function AdminDashboardClient({
     } catch (error) {
       console.error(error);
       alert("클립보드 복사에 실패했습니다.");
+    }
+  }
+
+  async function handleSync(post: Post) {
+    const shouldSync = window.confirm(
+      `"${post.title}" 폴더를 운영 서버와 동기화할까요?\n로컬에서만 실행되며, 운영 서버에는 같은 슬러그 폴더가 덮어써질 수 있습니다.`,
+    );
+    if (!shouldSync) return;
+
+    setIsSyncingId(post.id);
+    setStatus(`"${post.title}" 폴더를 운영 서버와 동기화하고 있습니다.`);
+
+    try {
+      const response = await fetch("/api/admin/inject-post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: post.id }),
+      });
+
+      const data = (await response.json()) as { error?: string; fileCount?: number };
+      if (!response.ok) {
+        throw new Error(data.error || "운영 서버 동기화에 실패했습니다.");
+      }
+
+      setStatus(
+        `"${post.title}" 폴더를 운영 서버와 동기화했습니다. (${data.fileCount ?? 0}개 파일 전송)`,
+      );
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : "운영 서버 동기화 중 오류가 발생했습니다.";
+      alert(message);
+      setStatus(message);
+    } finally {
+      setIsSyncingId(null);
     }
   }
 
@@ -567,11 +621,11 @@ export default function AdminDashboardClient({
                 MMA Blog Admin
               </p>
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
-                삭제와 네이버 복사에 집중한 관리 화면입니다.
+                생성한 글을 정리하고 운영 서버로 넘기는 관리 화면입니다.
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-black/65 md:text-base">
-                오른쪽 편집 패널은 제거했고, 지금은 글 목록을 빠르게 훑고 바로 복사하거나
-                삭제하는 흐름에 맞춰 레이아웃을 다시 정리했습니다.
+                글 생성 후 목록에서 바로 네이버 복사, 삭제, 운영 서버 동기화까지 이어서 처리할 수 있도록
+                흐름을 정리했습니다.
               </p>
             </div>
 
@@ -726,7 +780,7 @@ export default function AdminDashboardClient({
               </p>
               <h2 className="mt-2 text-3xl font-black tracking-tight">목록 중심 관리</h2>
               <p className="mt-2 text-sm text-black/55">
-                글 제목, 카테고리, 날짜를 한눈에 보고 네이버 복사와 삭제만 빠르게 처리합니다.
+                글 제목, 카테고리, 날짜를 한눈에 보고 네이버 복사, 운영 서버 동기화, 삭제를 빠르게 처리합니다.
               </p>
             </div>
 
@@ -788,6 +842,14 @@ export default function AdminDashboardClient({
                         className="rounded-full border border-accent/20 bg-accent/8 px-4 py-2 text-sm font-bold text-accent transition hover:bg-accent hover:text-white"
                       >
                         {copiedId === post.id ? "복사됨" : "네이버 붙여넣기 복사"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleSync(post)}
+                        disabled={isSyncingId === post.id}
+                        className="rounded-full border border-black/10 bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isSyncingId === post.id ? "동기화 중..." : "운영 서버 동기화"}
                       </button>
                       <button
                         type="button"

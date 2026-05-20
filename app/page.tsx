@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getPosts } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   const posts = getPosts();
   return (
