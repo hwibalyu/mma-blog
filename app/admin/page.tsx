@@ -7,7 +7,7 @@ export default function AdminPage() {
     notFound();
   }
 
-  const initialPosts = getPosts();
+  const initialPosts = getPosts({ includeHidden: true });
 
   return <AdminDashboardClient initialPosts={initialPosts} />;
 }

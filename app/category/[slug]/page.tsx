@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 const categoryMap: Record<string, string> = {
   "column": "컬럼",
-  "global-column": "해외컬럼",
+  "global-news": "해외컬럼/뉴스",
+  "match-analysis": "매치분석",
 };
 
 export async function generateStaticParams() {

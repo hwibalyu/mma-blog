@@ -13,6 +13,8 @@ type Post = {
   date: string;
   excerpt?: string;
   raw: string;
+  hidden: boolean;
+  displayOrder: number | null;
 };
 
 type MarkdownNode = {
@@ -264,86 +266,37 @@ type AdminDashboardClientProps = {
   initialPosts: Post[];
 };
 
-type ImageStyle = "event-photo" | "fight-action" | "fighter-portrait" | "poster-illustration";
+function reorderIds(ids: string[], fromId: string, toId: string) {
+  if (fromId === toId) return ids;
 
-type GeneratedPostResponse = {
-  content: string;
-  slug: string;
-  imagePrompt: string;
-};
+  const next = [...ids];
+  const fromIndex = next.indexOf(fromId);
+  const toIndex = next.indexOf(toId);
 
-const IMAGE_STYLE_OPTIONS: Array<{
-  value: ImageStyle;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "event-photo",
-    label: "이벤트 사진",
-    description: "대회 현장, 케이지, 조명, 군중 분위기 중심",
-  },
-  {
-    value: "fight-action",
-    label: "매치 액션",
-    description: "타격 교환, 테이크다운 방어 같은 경기 장면 중심",
-  },
-  {
-    value: "fighter-portrait",
-    label: "선수 포트레이트",
-    description: "선수 중심의 기사형 인물 사진 분위기",
-  },
-  {
-    value: "poster-illustration",
-    label: "포스터 일러스트",
-    description: "매거진용 스포츠 포스터 스타일 일러스트",
-  },
-];
+  if (fromIndex === -1 || toIndex === -1) {
+    return ids;
+  }
 
-function extractMarkdownImages(markdown: string) {
-  const matches = [...markdown.matchAll(/!\[([^\]]*)\]\((\.\/[^)]+)\)/g)];
-  return matches.map((match) => ({
-    alt: match[1]?.trim() || "MMA article image",
-    path: match[2],
-  }));
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
 }
 
-function replaceImagePath(markdown: string, oldPath: string, newPath: string) {
-  return markdown.replace(oldPath, newPath);
-}
-
-function buildImageGenerationPrompt(basePrompt: string, imageAlt: string, imageStyle: ImageStyle) {
-  const styleInstruction =
-    imageStyle === "event-photo"
-      ? "Create a photorealistic editorial MMA event photo with arena atmosphere."
-      : imageStyle === "fight-action"
-        ? "Create a cinematic in-cage MMA action still with visible technique and impact."
-        : imageStyle === "fighter-portrait"
-          ? "Create a premium sports portrait of an MMA fighter, editorial magazine style."
-          : "Create a premium sports poster illustration inspired by a real MMA event and matchup.";
-
-  return `${basePrompt} ${styleInstruction} Focus specifically on this scene: ${imageAlt}`;
-}
-
-export default function AdminDashboardClient({
-  initialPosts,
-}: AdminDashboardClientProps) {
+export default function AdminDashboardClient({ initialPosts }: AdminDashboardClientProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [selectedId, setSelectedId] = useState<string | null>(initialPosts[0]?.id ?? null);
+  const [orderedIds, setOrderedIds] = useState<string[]>(() => initialPosts.map((post) => post.id));
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
+  const [isTogglingHiddenId, setIsTogglingHiddenId] = useState<string | null>(null);
+  const [isSyncingMainOrder, setIsSyncingMainOrder] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [generatePrompt, setGeneratePrompt] = useState("");
-  const [includeImages, setIncludeImages] = useState(true);
-  const [autoGenerateImages, setAutoGenerateImages] = useState(true);
-  const [imageStyle, setImageStyle] = useState<ImageStyle>("event-photo");
-  const [referenceImages, setReferenceImages] = useState<File[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState(
     initialPosts.length ? "글 목록이 준비되었습니다." : "아직 작성된 글이 없습니다.",
   );
 
-  async function fetchPosts(nextSelectedId?: string | null) {
+  async function fetchPosts() {
     setIsLoading(true);
 
     try {
@@ -354,10 +307,7 @@ export default function AdminDashboardClient({
 
       const data = (await response.json()) as Post[];
       setPosts(data);
-
-      const fallbackId = nextSelectedId ?? selectedId;
-      const nextSelected = data.find((post) => post.id === fallbackId) ?? data[0] ?? null;
-      setSelectedId(nextSelected?.id ?? null);
+      setOrderedIds(data.map((post) => post.id));
       setStatus(data.length ? "글 목록이 갱신되었습니다." : "아직 작성된 글이 없습니다.");
     } catch (error) {
       console.error(error);
@@ -390,13 +340,13 @@ export default function AdminDashboardClient({
       }
 
       const response = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
-      const data = await response.json();
+      const data = (await response.json()) as { error?: string };
       if (!response.ok) {
         throw new Error(data.error || "삭제에 실패했습니다.");
       }
 
       setStatus(`"${post.title}" 글을 로컬과 운영 서버에서 삭제했습니다.`);
-      await fetchPosts(selectedId === post.id ? null : selectedId);
+      await fetchPosts();
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.";
@@ -425,7 +375,6 @@ export default function AdminDashboardClient({
       }
 
       setCopiedId(post.id);
-      setSelectedId(post.id);
       setStatus(`"${post.title}" 글을 네이버 블로그용 서식 HTML로 복사했습니다.`);
       window.setTimeout(() => {
         setCopiedId((current) => (current === post.id ? null : current));
@@ -437,6 +386,11 @@ export default function AdminDashboardClient({
   }
 
   async function handleSync(post: Post) {
+    if (post.hidden) {
+      alert("숨김 글은 운영 서버에 동기화할 수 없습니다. 먼저 퍼블리시 상태로 바꿔주세요.");
+      return;
+    }
+
     const shouldSync = window.confirm(
       `"${post.title}" 폴더를 운영 서버와 동기화할까요?\n로컬에서만 실행되며, 운영 서버에는 같은 슬러그 폴더가 덮어써질 수 있습니다.`,
     );
@@ -472,179 +426,160 @@ export default function AdminDashboardClient({
     }
   }
 
-  async function handleGeneratePost() {
-    const trimmedPrompt = generatePrompt.trim();
-    if (!trimmedPrompt) {
-      alert("작성할 컬럼 주제를 입력해주세요.");
-      return;
-    }
+  async function handleToggleHidden(post: Post) {
+    const nextHidden = !post.hidden;
+    const actionLabel = nextHidden ? "숨김" : "퍼블리시";
+    const shouldProceed = window.confirm(
+      nextHidden
+        ? `"${post.title}" 글을 숨김 처리할까요?\n로컬과 운영 서버 모두 숨김 상태로 맞춥니다.`
+        : `"${post.title}" 글을 퍼블리시 가능 상태로 바꿀까요?\n로컬과 운영 서버 모두 공개 가능 상태로 맞춥니다.`,
+    );
 
-    setIsGenerating(true);
-    setStatus("AI가 글 초안을 작성하고 있습니다.");
+    if (!shouldProceed) return;
+
+    setIsTogglingHiddenId(post.id);
 
     try {
-      const generateResponse = await fetch("/api/generate", {
-        method: "POST",
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: trimmedPrompt,
-          includeImages,
-          imageStyle,
+          hidden: nextHidden,
         }),
       });
 
-      const generatedData = (await generateResponse.json()) as GeneratedPostResponse | { error?: string };
-      if (!generateResponse.ok || !("content" in generatedData)) {
-        throw new Error(("error" in generatedData && generatedData.error) || "글 생성에 실패했습니다.");
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || `${actionLabel} 처리에 실패했습니다.`);
       }
 
-      let nextContent = generatedData.content;
-      const nextSlug = generatedData.slug;
-
-      setStatus("생성된 글을 저장하고 있습니다.");
-
-      const saveResponse = await fetch("/api/posts", {
+      const syncResponse = await fetch("/api/admin/inject-post", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: nextSlug,
-          content: nextContent,
-        }),
+        body: JSON.stringify({ id: post.id }),
       });
 
-      const saveData = (await saveResponse.json()) as { error?: string };
-      if (!saveResponse.ok) {
-        throw new Error(saveData.error || "글 저장에 실패했습니다.");
+      const syncData = (await syncResponse.json()) as { error?: string };
+      if (!syncResponse.ok) {
+        throw new Error(
+          syncData.error ||
+            `${actionLabel} 상태는 로컬에 저장됐지만 운영 서버 동기화에는 실패했습니다.`,
+        );
       }
 
-      const uploadedReferenceNames: string[] = [];
-
-      if (referenceImages.length > 0) {
-        setStatus(`참조 이미지 ${referenceImages.length}장을 업로드하고 있습니다.`);
-
-        for (const referenceImage of referenceImages) {
-          const formData = new FormData();
-          formData.append("file", referenceImage);
-
-          const assetResponse = await fetch(`/api/posts/${nextSlug}/assets`, {
-            method: "POST",
-            body: formData,
-          });
-
-          const assetData = (await assetResponse.json()) as { fileName?: string; error?: string };
-          if (!assetResponse.ok || !assetData.fileName) {
-            throw new Error(assetData.error || "참조 이미지 업로드에 실패했습니다.");
-          }
-
-          uploadedReferenceNames.push(assetData.fileName);
-        }
-      }
-
-      if (includeImages && autoGenerateImages) {
-        const markdownImages = extractMarkdownImages(nextContent);
-
-        if (markdownImages.length > 0) {
-          setStatus(`이미지 ${markdownImages.length}장을 생성하고 있습니다.`);
-
-          for (const markdownImage of markdownImages) {
-            const imagePrompt = buildImageGenerationPrompt(
-              generatedData.imagePrompt,
-              markdownImage.alt,
-              imageStyle,
-            );
-
-            const imageResponse = await fetch("/api/generate-image", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                prompt: imagePrompt,
-                postId: nextSlug,
-                caption: markdownImage.alt,
-                imageStyle,
-                referenceImageNames: uploadedReferenceNames,
-              }),
-            });
-
-            const imageData = (await imageResponse.json()) as { fileName?: string; error?: string };
-            if (!imageResponse.ok || !imageData.fileName) {
-              throw new Error(imageData.error || "이미지 생성에 실패했습니다.");
-            }
-
-            nextContent = replaceImagePath(nextContent, markdownImage.path, `./${imageData.fileName}`);
-          }
-
-          const updateResponse = await fetch(`/api/posts/${nextSlug}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              content: nextContent,
-            }),
-          });
-
-          const updateData = (await updateResponse.json()) as { error?: string };
-          if (!updateResponse.ok) {
-            throw new Error(updateData.error || "이미지 경로 반영에 실패했습니다.");
-          }
-        }
-      }
-
-      setGeneratePrompt("");
-      setReferenceImages([]);
-      setStatus(`"${nextSlug}" 글 생성이 완료되었습니다.`);
-      await fetchPosts(nextSlug);
+      setStatus(
+        nextHidden
+          ? `"${post.title}" 글을 로컬과 운영 서버 모두 숨김 처리했습니다.`
+          : `"${post.title}" 글을 로컬과 운영 서버 모두 퍼블리시 가능 상태로 바꿨습니다.`,
+      );
+      await fetchPosts();
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "글 생성 중 오류가 발생했습니다.");
-      setStatus("글 생성 중 오류가 발생했습니다.");
+      const message = error instanceof Error ? error.message : `${actionLabel} 처리 중 오류가 발생했습니다.`;
+      alert(message);
+      setStatus(message);
     } finally {
-      setIsGenerating(false);
+      setIsTogglingHiddenId(null);
     }
   }
 
-  const selectedPost = posts.find((post) => post.id === selectedId) ?? null;
+  async function handleSyncMainOrder() {
+    if (orderedIds.length === 0) {
+      return;
+    }
+
+    const shouldSync = window.confirm(
+      "현재 드래그 순서를 메인 표시 순서로 저장하고, 퍼블리시된 글을 운영 서버에 순서 동기화할까요?",
+    );
+    if (!shouldSync) return;
+
+    setIsSyncingMainOrder(true);
+    setStatus("메인 표시 순서를 저장하고 운영 서버에 동기화하고 있습니다.");
+
+    try {
+      for (const [index, postId] of orderedIds.entries()) {
+        const orderResponse = await fetch(`/api/posts/${postId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            displayOrder: index + 1,
+          }),
+        });
+
+        const orderData = (await orderResponse.json()) as { error?: string };
+        if (!orderResponse.ok) {
+          throw new Error(orderData.error || "표시 순서 저장에 실패했습니다.");
+        }
+      }
+
+      for (const postId of orderedIds) {
+        const post = posts.find((entry) => entry.id === postId);
+        if (!post || post.hidden) {
+          continue;
+        }
+
+        const syncResponse = await fetch("/api/admin/inject-post", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: post.id }),
+        });
+
+        const syncData = (await syncResponse.json()) as { error?: string };
+        if (!syncResponse.ok) {
+          throw new Error(syncData.error || `"${post.title}" 글 동기화에 실패했습니다.`);
+        }
+      }
+
+      setStatus("메인 표시 순서 저장과 운영 서버 동기화가 완료되었습니다.");
+      await fetchPosts();
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : "메인 순서 동기화 중 오류가 발생했습니다.";
+      alert(message);
+      setStatus(message);
+    } finally {
+      setIsSyncingMainOrder(false);
+    }
+  }
+
+  const orderedPosts = orderedIds
+    .map((id) => posts.find((post) => post.id === id) ?? null)
+    .filter((post): post is Post => post !== null);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff7f1_0%,#ffffff_45%,#fffaf7_100%)] text-black">
-      <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
         <section className="rounded-[2rem] border border-black/10 bg-white/95 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.05)] md:p-8">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_420px] xl:items-start">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl">
               <p className="text-sm font-semibold uppercase tracking-[0.32em] text-accent">
                 MMA Blog Admin
               </p>
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
-                생성한 글을 정리하고 운영 서버로 넘기는 관리 화면입니다.
+                메인 노출 순서와 퍼블리시 상태를 정리하는 관리 화면입니다.
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-black/65 md:text-base">
-                글 생성 후 목록에서 바로 네이버 복사, 삭제, 운영 서버 동기화까지 이어서 처리할 수 있도록
-                흐름을 정리했습니다.
+                생성 패널은 제거했고, 이제는 제목 중심 목록에서 드래그로 순서를 바꾸고 필요한 버튼만 빠르게 처리할 수 있도록 정리했습니다.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
               <div className="rounded-[1.5rem] border border-black/10 bg-black px-5 py-5 text-white">
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
                   Posts
                 </div>
-                <div className="mt-2 text-3xl font-black">{posts.length}</div>
+                <div className="mt-2 text-3xl font-black">{orderedPosts.length}</div>
               </div>
-              <div className="rounded-[1.5rem] border border-black/10 bg-[#fcfaf8] px-5 py-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-black/45">
-                  Selected
-                </div>
-                <div className="mt-2 line-clamp-2 text-base font-black leading-6">
-                  {selectedPost?.title ?? "선택된 글 없음"}
-                </div>
-              </div>
-              <div className="rounded-[1.5rem] border border-accent/15 bg-[#fff6f3] px-5 py-5 sm:col-span-3 xl:col-span-1">
+              <div className="rounded-[1.5rem] border border-accent/15 bg-[#fff6f3] px-5 py-5 sm:col-span-2">
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                   Status
                 </div>
@@ -657,212 +592,143 @@ export default function AdminDashboardClient({
         </section>
 
         <section className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_18px_60px_rgba(0,0,0,0.05)] md:p-6">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_420px]">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/40">
-                Generate Article
-              </p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight">글과 이미지까지 한 번에 생성</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-black/55">
-                주제를 입력하면 새 포스트를 만들고, 원하면 본문의 이미지 자리표시자를 실제 생성 이미지 파일로
-                자동 치환합니다. 이제 이상한 추상 이미지보다 기사형 MMA 비주얼이 우선 나오도록 프롬프트가 보강돼
-                있습니다.
-              </p>
-
-              <label className="mt-6 block">
-                <span className="text-sm font-bold text-black/70">주제 프롬프트</span>
-                <textarea
-                  value={generatePrompt}
-                  onChange={(event) => setGeneratePrompt(event.target.value)}
-                  placeholder="예: UFC 328 메인 이벤트 분석, 주요 라운드 흐름과 체급 판도 변화까지 포함해서 컬럼 작성"
-                  className="mt-3 min-h-[180px] w-full rounded-[1.5rem] border border-black/10 bg-[#fffaf7] px-5 py-4 text-sm leading-7 text-black outline-none transition placeholder:text-black/30 focus:border-accent"
-                />
-              </label>
-
-              <label className="mt-5 block">
-                <span className="text-sm font-bold text-black/70">참조 이미지 업로드</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  multiple
-                  onChange={(event) => setReferenceImages(Array.from(event.target.files ?? []))}
-                  className="mt-3 block w-full rounded-[1.25rem] border border-dashed border-black/15 bg-white px-4 py-4 text-sm text-black/65 file:mr-4 file:rounded-full file:border-0 file:bg-black file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
-                />
-                <p className="mt-2 text-xs leading-6 text-black/45">
-                  실제 행사 사진, 매치 장면, 선수 사진을 올리면 저장 후 그 이미지를 기준으로 편집/변형 생성합니다.
-                </p>
-                {referenceImages.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {referenceImages.map((file) => (
-                      <span
-                        key={`${file.name}-${file.size}`}
-                        className="rounded-full border border-black/10 bg-[#fff3ee] px-3 py-1 text-xs font-semibold text-black/65"
-                      >
-                        {file.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </label>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-black/10 bg-[#fffaf7] p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-black/40">Image Setup</p>
-              <div className="mt-4 grid gap-3">
-                {IMAGE_STYLE_OPTIONS.map((option) => {
-                  const isActive = option.value === imageStyle;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setImageStyle(option.value)}
-                      className={`rounded-[1.25rem] border px-4 py-4 text-left transition ${
-                        isActive
-                          ? "border-accent bg-[#fff1ec] shadow-[0_10px_24px_rgba(211,47,47,0.12)]"
-                          : "border-black/10 bg-white hover:border-black/20"
-                      }`}
-                    >
-                      <div className="text-sm font-black text-black">{option.label}</div>
-                      <div className="mt-1 text-xs leading-6 text-black/55">{option.description}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <label className="mt-5 flex items-start gap-3 rounded-[1.25rem] border border-black/10 bg-white px-4 py-4">
-                <input
-                  type="checkbox"
-                  checked={includeImages}
-                  onChange={(event) => setIncludeImages(event.target.checked)}
-                  className="mt-1 h-4 w-4 accent-[var(--color-accent,#d32f2f)]"
-                />
-                <span>
-                  <span className="block text-sm font-bold text-black">본문 이미지 포함</span>
-                  <span className="mt-1 block text-xs leading-6 text-black/55">
-                    글 안에 2~3개의 이미지 자리와 캡션을 함께 생성합니다.
-                  </span>
-                </span>
-              </label>
-
-              <label className="mt-3 flex items-start gap-3 rounded-[1.25rem] border border-black/10 bg-white px-4 py-4">
-                <input
-                  type="checkbox"
-                  checked={autoGenerateImages}
-                  onChange={(event) => setAutoGenerateImages(event.target.checked)}
-                  disabled={!includeImages}
-                  className="mt-1 h-4 w-4 accent-[var(--color-accent,#d32f2f)]"
-                />
-                <span>
-                  <span className="block text-sm font-bold text-black">이미지 자동 생성</span>
-                  <span className="mt-1 block text-xs leading-6 text-black/55">
-                    저장 직후 이미지 파일을 만들고, 마크다운 경로를 실제 생성 파일명으로 자동 교체합니다.
-                  </span>
-                </span>
-              </label>
-
-              <button
-                type="button"
-                onClick={() => void handleGeneratePost()}
-                disabled={isGenerating}
-                className="mt-6 w-full rounded-full bg-black px-5 py-3 text-sm font-black text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isGenerating ? "생성 중..." : "새 글 생성"}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_18px_60px_rgba(0,0,0,0.05)] md:p-6">
           <div className="flex flex-col gap-4 border-b border-black/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/40">
                 Article List
               </p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight">목록 중심 관리</h2>
+              <h2 className="mt-2 text-3xl font-black tracking-tight">목록형 관리</h2>
               <p className="mt-2 text-sm text-black/55">
-                글 제목, 카테고리, 날짜를 한눈에 보고 네이버 복사, 운영 서버 동기화, 삭제를 빠르게 처리합니다.
+                드래그로 메인 순서를 바꾸고, 숨김, 복사, 개별 동기화, 삭제를 한 줄에서 바로 처리합니다.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void fetchPosts()}
-              className="rounded-full border border-black/10 px-5 py-3 text-sm font-bold transition hover:bg-black hover:text-white"
-            >
-              {isLoading ? "새로고침 중..." : "목록 새로고침"}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleSyncMainOrder()}
+                disabled={isSyncingMainOrder}
+                className="rounded-full bg-black px-5 py-3 text-sm font-black text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSyncingMainOrder ? "메인 순서 동기화 중..." : "메인 순서 동기화"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void fetchPosts()}
+                className="rounded-full border border-black/10 px-5 py-3 text-sm font-bold transition hover:bg-black hover:text-white"
+              >
+                {isLoading ? "새로고침 중..." : "목록 새로고침"}
+              </button>
+            </div>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+          <div className="mt-4 rounded-[1.25rem] border border-dashed border-black/10 bg-[#fffaf7] px-4 py-3 text-xs font-semibold leading-6 text-black/50">
+            왼쪽 핸들을 잡고 드래그하면 메인 노출 순서를 바꿀 수 있습니다. 정렬 변경 후 `메인 순서 동기화`를 눌러야 로컬 저장과 운영 서버 반영이 함께 끝납니다.
+          </div>
+
+          <div className="mt-6">
             {isLoading ? (
               <div className="rounded-[1.75rem] border border-dashed border-black/15 px-5 py-12 text-center text-sm text-black/50">
                 글 목록을 불러오는 중입니다.
               </div>
-            ) : posts.length === 0 ? (
+            ) : orderedPosts.length === 0 ? (
               <div className="rounded-[1.75rem] border border-dashed border-black/15 px-5 py-12 text-center text-sm text-black/50">
                 등록된 글이 없습니다.
               </div>
             ) : (
-              posts.map((post) => {
-                const isActive = post.id === selectedId;
-
-                return (
-                  <article
+              <ul className="flex flex-col gap-3">
+                {orderedPosts.map((post, index) => (
+                  <li
                     key={post.id}
-                    className={`rounded-[1.75rem] border p-5 transition ${
-                      isActive
-                        ? "border-accent bg-[#fff7f3] shadow-[0_14px_34px_rgba(211,47,47,0.12)]"
+                    draggable
+                    onDragStart={() => setDraggingId(post.id)}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (!draggingId) return;
+                      setOrderedIds((current) => reorderIds(current, draggingId, post.id));
+                      setDraggingId(null);
+                    }}
+                    onDragEnd={() => setDraggingId(null)}
+                    className={`flex flex-col gap-3 rounded-[1.5rem] border px-4 py-4 transition md:flex-row md:items-center md:justify-between ${
+                      draggingId === post.id
+                        ? "border-accent bg-[#fff1ec] shadow-[0_12px_30px_rgba(211,47,47,0.12)]"
                         : "border-black/10 bg-[#fffaf7] hover:border-black/20 hover:bg-white"
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(post.id)}
-                      className="w-full text-left"
-                    >
-                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                        {post.category}
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div
+                        className="cursor-grab select-none rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-black text-black/45 active:cursor-grabbing"
+                        aria-label={`${post.title} 드래그 핸들`}
+                      >
+                        ≡
                       </div>
-                      <h3 className="mt-3 text-2xl font-black leading-8 tracking-tight break-keep">
-                        {post.title}
-                      </h3>
-                      <p className="mt-3 text-sm text-black/45">{post.date}</p>
-                      <p className="mt-2 truncate text-sm text-black/55">/{post.id}</p>
-                      {post.excerpt ? (
-                        <p className="mt-4 line-clamp-3 text-sm leading-6 text-black/60">
-                          {post.excerpt}
-                        </p>
+                      <div className="w-8 text-sm font-black text-black/35">{index + 1}</div>
+                      <div className="min-w-0">
+                        <div className="truncate text-lg font-black text-black">{post.title}</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-black/45">
+                          <span>{post.category}</span>
+                          <span>{post.date}</span>
+                          <span className="truncate">/{post.id}</span>
+                        </div>
+                      </div>
+                      {post.hidden ? (
+                        <div className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
+                          로컬 숨김
+                        </div>
                       ) : null}
-                    </button>
+                    </div>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 md:justify-end">
                       <button
                         type="button"
                         onClick={() => void handleCopy(post)}
-                        className="rounded-full border border-accent/20 bg-accent/8 px-4 py-2 text-sm font-bold text-accent transition hover:bg-accent hover:text-white"
+                        className="rounded-full border border-accent/20 bg-accent/8 px-4 py-2 text-xs font-bold text-accent transition hover:bg-accent hover:text-white"
                       >
-                        {copiedId === post.id ? "복사됨" : "네이버 붙여넣기 복사"}
+                        {copiedId === post.id ? "복사됨" : "네이버 복사"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleToggleHidden(post)}
+                        disabled={isTogglingHiddenId === post.id}
+                        className={`rounded-full px-4 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                          post.hidden
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white"
+                            : "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white"
+                        }`}
+                      >
+                        {isTogglingHiddenId === post.id
+                          ? "처리 중..."
+                          : post.hidden
+                            ? "퍼블리시로 전환"
+                            : "숨김"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleSync(post)}
-                        disabled={isSyncingId === post.id}
-                        className="rounded-full border border-black/10 bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={isSyncingId === post.id || post.hidden}
+                        className="rounded-full border border-black/10 bg-black px-4 py-2 text-xs font-bold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {isSyncingId === post.id ? "동기화 중..." : "운영 서버 동기화"}
+                        {post.hidden
+                          ? "숨김 글 비공개"
+                          : isSyncingId === post.id
+                            ? "동기화 중..."
+                            : "개별 동기화"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleDelete(post)}
                         disabled={isDeletingId === post.id}
-                        className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {isDeletingId === post.id ? "삭제 중..." : "삭제"}
                       </button>
                     </div>
-                  </article>
-                );
-              })
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </section>

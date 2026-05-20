@@ -9,12 +9,12 @@
 본 블로그는 **Colocation(글과 이미지를 한 폴더에 모아두기)** 방식을 사용합니다.
 새 글을 작성하려면 `content/posts/` 폴더 내에 **영어 소문자와 하이픈(`-`)**으로 이루어진 새 폴더를 만들고, 그 안에 `index.md` 파일을 생성합니다. (이 폴더 이름이 글의 URL 주소가 됩니다.)
 
-**예시:** `content/posts/my-new-post/index.md`
+**예시:** `content/posts/2026-05-20-my-new-post/index.md`
 
 ```text
 content/
   └── posts/
-      ├── my-new-post/       <-- (새로 만든 폴더: URL 주소가 됨)
+      ├── 2026-05-20-my-new-post/  <-- (새로 만든 폴더: URL 주소가 됨)
       │   ├── index.md       <-- (이곳에 글을 작성!)
       │   └── photo1.jpg     <-- (글에 쓰일 이미지도 같은 폴더에 쏙!)
       └── ufc-294-review/
@@ -31,7 +31,7 @@ content/
 ```markdown
 ---
 title: "글의 제목을 입력하세요"
-category: "컬럼"  # '컬럼' 또는 '해외컬럼' 중 하나를 선택하세요.
+category: "컬럼"  # '컬럼', '해외컬럼/뉴스', '매치분석' 중 하나를 선택하세요.
 date: "2026-05-15"
 excerpt: "홈페이지 목록에 보여질 짧은 요약(미리보기) 문구를 적어주세요."
 tags: ["UFC", "타격", "태그이름"]
@@ -68,7 +68,7 @@ tags: ["UFC", "타격", "태그이름"]
 아티클 본문 맨 아래에 `참고한 공개 자료` 목록을 직접 붙이지 마세요.
 참고한 공개 자료를 남기고 싶다면, 같은 폴더 안에 `references.md` 파일을 따로 만들어 그쪽에 정리합니다.
 
-**예시:** `content/posts/my-new-post/references.md`
+**예시:** `content/posts/2026-05-20-my-new-post/references.md`
 
 ```markdown
 # 참고한 공개 자료

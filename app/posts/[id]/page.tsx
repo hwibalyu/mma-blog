@@ -17,7 +17,9 @@ export async function generateStaticParams() {
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const post = getPost(resolvedParams.id);
+  const post = getPost(resolvedParams.id, {
+    includeHidden: process.env.NODE_ENV !== "production",
+  });
 
   if (!post) {
     notFound();

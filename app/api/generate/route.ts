@@ -78,8 +78,9 @@ ${imagePromptGuide}
     1. 반드시 '---'로 시작하는 YAML Frontmatter를 포함할 것.
     2. date 항목은 반드시 "${currentTime}" (현재 날짜와 시간)으로 작성할 것.
     3. title, category, excerpt, tags 항목을 빠짐없이 채울 것.
-    4. 본문은 [작성 가이드라인]의 분량과 스타일을 따를 것.
-    5. ${includeImages ? "본문 중간중간에 이미지 태그(![설명](./filename.jpg))를 2~3개 적절히 배치할 것." : "본문에 이미지 태그를 절대 포함하지 말 것."}
+    4. category는 반드시 "컬럼", "해외컬럼/뉴스", "매치분석" 중 하나만 사용할 것.
+    5. 본문은 [작성 가이드라인]의 분량과 스타일을 따를 것.
+    6. ${includeImages ? "본문 중간중간에 이미지 태그(![설명](./filename.jpg))를 2~3개 적절히 배치할 것." : "본문에 이미지 태그를 절대 포함하지 말 것."}
 `;
 
     // z.ai API 키 로드 (GEMINI_API_KEY 변수를 재사용하거나 ZAI_API_KEY 사용 가능하도록 대응)

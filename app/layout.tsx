@@ -33,10 +33,13 @@ export default function RootLayout({
       <body className="font-sans min-h-screen flex flex-col selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black word-break-keep-all">
         <header className="w-full border-b border-black/10 dark:border-white/10 py-6 px-4 md:px-8">
           <div className="max-w-4xl mx-auto flex items-baseline justify-between">
-            <h1 className="text-2xl font-black tracking-tighter uppercase">The MMA Journal</h1>
+            <Link href="/" className="text-2xl font-black tracking-tighter uppercase hover:text-accent transition-colors">
+              The MMA Journal
+            </Link>
             <nav className="hidden md:flex gap-6 text-sm font-bold tracking-wide text-black/60 dark:text-white/60">
               <Link href="/category/column" className="hover:text-black dark:hover:text-white transition-colors">컬럼</Link>
-              <Link href="/category/global-column" className="hover:text-black dark:hover:text-white transition-colors">해외컬럼</Link>
+              <Link href="/category/global-news" className="hover:text-black dark:hover:text-white transition-colors">해외컬럼/뉴스</Link>
+              <Link href="/category/match-analysis" className="hover:text-black dark:hover:text-white transition-colors">매치분석</Link>
             </nav>
           </div>
         </header>
