@@ -13,7 +13,7 @@ tags:
   - 최준서
   - 국내MMA
   - 격투기칼럼
-displayOrder: 2
+displayOrder: 1
 hidden: false
 ---
 

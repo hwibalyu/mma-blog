@@ -286,11 +286,16 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [orderedIds, setOrderedIds] = useState<string[]>(() => initialPosts.map((post) => post.id));
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [dateDrafts, setDateDrafts] = useState<Record<string, string>>(
+    () => Object.fromEntries(initialPosts.map((post) => [post.id, post.date])) as Record<string, string>,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [isSyncingId, setIsSyncingId] = useState<string | null>(null);
   const [isTogglingHiddenId, setIsTogglingHiddenId] = useState<string | null>(null);
   const [isSyncingMainOrder, setIsSyncingMainOrder] = useState(false);
+  const [isSavingDateId, setIsSavingDateId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [status, setStatus] = useState(
     initialPosts.length ? "글 목록이 준비되었습니다." : "아직 작성된 글이 없습니다.",
@@ -308,12 +313,57 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
       const data = (await response.json()) as Post[];
       setPosts(data);
       setOrderedIds(data.map((post) => post.id));
+      setDateDrafts(Object.fromEntries(data.map((post) => [post.id, post.date])) as Record<string, string>);
       setStatus(data.length ? "글 목록이 갱신되었습니다." : "아직 작성된 글이 없습니다.");
     } catch (error) {
       console.error(error);
       setStatus("글 목록을 불러오지 못했습니다.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleSaveDate(post: Post) {
+    const nextDate = (dateDrafts[post.id] ?? "").trim();
+
+    if (!nextDate) {
+      alert("날짜는 비워둘 수 없습니다.");
+      return;
+    }
+
+    if (nextDate === post.date) {
+      setEditingDateId(null);
+      return;
+    }
+
+    setIsSavingDateId(post.id);
+
+    try {
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: nextDate,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "날짜 저장에 실패했습니다.");
+      }
+
+      setStatus(`"${post.title}" 글의 날짜를 ${nextDate}(으)로 저장했습니다.`);
+      setEditingDateId(null);
+      await fetchPosts();
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : "날짜 저장 중 오류가 발생했습니다.";
+      alert(message);
+      setStatus(message);
+    } finally {
+      setIsSavingDateId(null);
     }
   }
 
@@ -670,7 +720,42 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
                         <div className="truncate text-lg font-black text-black">{post.title}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-black/45">
                           <span>{post.category}</span>
-                          <span>{post.date}</span>
+                          {editingDateId === post.id ? (
+                            <input
+                              type="text"
+                              value={dateDrafts[post.id] ?? ""}
+                              autoFocus
+                              onChange={(event) =>
+                                setDateDrafts((current) => ({
+                                  ...current,
+                                  [post.id]: event.target.value,
+                                }))
+                              }
+                              onBlur={() => void handleSaveDate(post)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  void handleSaveDate(post);
+                                }
+                                if (event.key === "Escape") {
+                                  setDateDrafts((current) => ({
+                                    ...current,
+                                    [post.id]: post.date,
+                                  }));
+                                  setEditingDateId(null);
+                                }
+                              }}
+                              className="w-32 rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-black outline-none focus:border-accent"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEditingDateId(post.id)}
+                              className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-black/55 transition hover:border-accent hover:text-black"
+                            >
+                              {isSavingDateId === post.id ? "저장 중..." : post.date}
+                            </button>
+                          )}
                           <span className="truncate">/{post.id}</span>
                         </div>
                       </div>

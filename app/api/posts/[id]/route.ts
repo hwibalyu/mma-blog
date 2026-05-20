@@ -63,9 +63,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
-    const { hidden, displayOrder } = (await request.json()) as {
+    const { hidden, displayOrder, date } = (await request.json()) as {
       hidden?: boolean;
       displayOrder?: number | null;
+      date?: string;
     };
 
     const postsDirectory = path.join(process.cwd(), "content/posts");
@@ -83,6 +84,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       nextData.hidden = hidden;
     }
 
+    if (typeof date === "string") {
+      const trimmedDate = date.trim();
+      if (!trimmedDate) {
+        return NextResponse.json({ error: "date must not be empty" }, { status: 400 });
+      }
+      nextData.date = trimmedDate;
+    } else if (date !== undefined) {
+      return NextResponse.json({ error: "date must be a string" }, { status: 400 });
+    }
+
     if (displayOrder === null) {
       delete nextData.displayOrder;
     } else if (typeof displayOrder === "number" && Number.isFinite(displayOrder)) {
@@ -91,8 +102,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "displayOrder must be a number or null" }, { status: 400 });
     }
 
-    if (hidden === undefined && displayOrder === undefined) {
-      return NextResponse.json({ error: "hidden or displayOrder is required" }, { status: 400 });
+    if (hidden === undefined && displayOrder === undefined && date === undefined) {
+      return NextResponse.json({ error: "hidden, displayOrder, or date is required" }, { status: 400 });
     }
 
     const nextRaw = matter.stringify(matterResult.content, {
@@ -106,6 +117,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       id,
       hidden: typeof nextData.hidden === "boolean" ? nextData.hidden : false,
       displayOrder: typeof nextData.displayOrder === "number" ? nextData.displayOrder : null,
+      date: typeof nextData.date === "string" ? nextData.date : "",
     });
   } catch (error: unknown) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
