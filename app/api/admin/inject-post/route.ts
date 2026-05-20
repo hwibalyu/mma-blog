@@ -15,8 +15,8 @@ function getErrorMessage(error: unknown) {
 
 export async function POST(request: Request) {
   try {
-    const { id } = (await request.json()) as { id?: string };
-    const { sshTarget, remotePostDir } = getSyncConfig(id);
+    const { id: rawId } = (await request.json()) as { id?: string };
+    const { id, sshTarget, remotePostDir } = getSyncConfig(rawId);
     const localPostDir = resolvePostDirectory(id);
 
     if (!fs.existsSync(localPostDir) || !fs.statSync(localPostDir).isDirectory()) {
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { id } = (await request.json()) as { id?: string };
-    const { sshTarget, remotePostDir } = getSyncConfig(id);
+    const { id: rawId } = (await request.json()) as { id?: string };
+    const { id, sshTarget, remotePostDir } = getSyncConfig(rawId);
 
     await execFileAsync("ssh", [sshTarget, "rm", "-rf", "--", remotePostDir]);
 
@@ -77,6 +77,7 @@ function getSyncConfig(id?: string) {
   const remotePostDir = path.posix.join(remotePostsDir.replace(/\/+$/, ""), id);
 
   return {
+    id,
     sshTarget,
     remotePostsDir,
     remotePostDir,
