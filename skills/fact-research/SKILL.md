@@ -81,6 +81,13 @@ Before drafting or revising the article, create a short internal note in this fo
 
 You do not need to save this to the repo unless the user asks, but you should explicitly form it before writing.
 
+## Reference handoff
+
+- If the article workflow needs a persistent list of consulted public materials, store it in `content/posts/<slug>/references.md`.
+- Do not append reference lists such as `참고한 공개 자료`, `출처`, or `Sources` to the bottom of `index.md`.
+- The article body should stay clean and reader-facing; source tracking belongs in the separate references file.
+- When handing off to `article-create` or `article-edit`, treat `references.md` as the default destination for public-source notes.
+
 ## Guardrails
 
 - Do not rely on a single article for the whole piece.

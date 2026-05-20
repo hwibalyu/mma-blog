@@ -25,5 +25,6 @@ If the article involves live topics, recent events, rankings, rumors, or dispute
 When the user asks to write, create, draft, publish, or generate a new MMA column/article/post, read and follow `skills/article-create/SKILL.md` before making changes.
 Treat requests like `컬럼 작성해줘`, `새 포스트 써줘`, `기사 생성해줘`, `주제: ...`, or any request to create a new post under `content/posts/` as article creation requests.
 When creating a new article, write the real markdown file directly under `content/posts/<slug>/index.md`.
-Do not leave image slots as placeholder-only by default. Generate real local image assets for the post unless the user explicitly asks for text-only or placeholder-only output.
+Do not generate image assets by default. Instead, insert the image tag directly in the markdown with a concrete descriptive caption and a relative placeholder filename such as `![설명](./scene-placeholder.jpg)` so the user can add the real file later.
+Do not leave source or reference lists inside the article body. Put public-source notes in a separate `content/posts/<slug>/references.md` file.
 Before drafting the article, run `fact-research` and use it as the first major phase of the workflow.

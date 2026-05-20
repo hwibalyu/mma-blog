@@ -49,7 +49,7 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Keep the tone polished, analytical, and magazine-like.
 - Improve clarity, rhythm, transitions, and section structure.
 - Strengthen technical and tactical MMA analysis where useful.
-- Keep markdown valid and preserve local image references such as `![alt](./image.jpg)`.
+- Keep markdown valid and preserve local image references such as `![alt](./fighter-faceoff.jpg)`.
 - Increase visual emphasis so the article does not read like a flat wall of text.
 
 ## Emphasis rules
@@ -72,6 +72,9 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Preserve frontmatter fields unless the edit requires updating them.
 - Keep category values aligned with the repo convention: `컬럼` or `해외컬럼`, unless the user requests a different taxonomy.
 - If the user asks for a light edit, prefer surgical wording changes over full rewrites.
+- If you insert a new image slot during an edit, add the actual markdown image tag directly with a concrete caption and a relative placeholder filename the user can later replace with a real file.
+- Do not trigger image generation as part of article edits unless the user explicitly asks for it.
+- Do not leave `참고한 공개 자료` or source lists inside `index.md`; move them to `references.md` in the same post folder.
 
 ## Revision checklist
 
@@ -80,7 +83,8 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - The article has a strong opening and clear section flow.
 - Important fighters, techniques, and outcomes are emphasized cleanly with markdown.
 - Each major section has enough visual emphasis to be easy to scan.
-- Any inserted image placeholders use relative local paths.
+- Any inserted image tags use concrete descriptions and relative placeholder filenames, not generic names like `image.jpg`.
+- Any reference or source list is stored in `references.md`, not at the bottom of the article body.
 
 ## Output preference
 

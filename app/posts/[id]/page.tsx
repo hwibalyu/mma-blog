@@ -97,9 +97,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               }
               
               return (
-                <span className="block my-10 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={finalSrc} className="w-full h-auto object-cover max-h-[600px]" {...props} alt={props.alt || "Post image"} />
+                <span className="block my-10 overflow-hidden rounded-xl">
+                  <span className="flex max-h-[600px] items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={finalSrc}
+                      className="block max-h-[600px] w-full object-contain"
+                      {...props}
+                      alt={props.alt || "Post image"}
+                    />
+                  </span>
                   {props.alt && (
                     <span className="block text-center text-sm font-medium text-black/50 dark:text-white/50 py-3 bg-black/5 dark:bg-white/5">
                       {props.alt}

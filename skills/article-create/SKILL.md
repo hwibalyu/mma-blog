@@ -1,6 +1,6 @@
 ---
 name: article-create
-description: Create new MMA blog articles in this repository, including real local image assets by default.
+description: Create new MMA blog articles in this repository, leaving image insertion tags with concrete descriptions and placeholder local filenames for the user to fill later.
 ---
 
 # Article Create
@@ -18,6 +18,7 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 
 - Treat fact collection as the first major phase of the task.
 - Create the real post folder and `index.md` under `content/posts/<slug>/`.
+- If reference notes are needed, store them in `content/posts/<slug>/references.md`, not in the article body.
 - Do not stop at an outline or draft in chat unless the user explicitly asks for draft-only output.
 - Frontmatter must be valid and use repo conventions.
 - Write in the repository's Korean MMA magazine voice.
@@ -25,42 +26,31 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 
 ## Image policy
 
-- By default, generate real local image assets for the post.
-- Do not leave SVG placeholders or generic `./image.jpg` placeholders unless:
-  - the user explicitly wants placeholders only, or
-  - image generation is blocked and you must fall back.
+- Do not generate image assets by default.
+- Insert image slots directly into the markdown using the real markdown image tag format, with a concrete description and a relative placeholder filename.
+- Use descriptive placeholder filenames that imply the intended scene, for example `./topuria-makhachev-faceoff.jpg` or `./zfn-cage-atmosphere.jpg`.
+- Do not use vague placeholders like `./image.jpg`, `./photo1.jpg`, or `./placeholder.png`.
 - Prefer 1 to 3 images per post.
 - Image captions in markdown must describe concrete scenes, not vague placeholders.
-- If the article is about a real event or real fighters, prefer:
+- The inserted tag itself should be the container the user will later satisfy with a real file, for example:
+
+```markdown
+![토푸리아와 마카체프가 옥타곤 중앙에서 서로를 응시하는 슈퍼파이트 분위기 이미지](./topuria-makhachev-faceoff.jpg)
+```
+
+- If the article is about a real event or real fighters, prefer descriptions based on:
   1. editorial event photo style
   2. in-cage action still
   3. fighter portrait
   4. premium sports poster illustration
-- If exact real-photo fidelity is not feasible, generate an event-inspired editorial visual or sports illustration that still matches the article.
+- If the article needs multiple images, spread the tags at meaningful section breaks instead of clustering them at the top.
 
-## How to generate images
+## Reference policy
 
-After writing `index.md`, run:
-
-```bash
-node scripts/generate-post-images.mjs --post <slug>
-```
-
-Optional style override:
-
-```bash
-node scripts/generate-post-images.mjs --post <slug> --style fight-action
-node scripts/generate-post-images.mjs --post <slug> --style fighter-portrait
-node scripts/generate-post-images.mjs --post <slug> --style poster-illustration
-```
-
-Optional extra article context:
-
-```bash
-node scripts/generate-post-images.mjs --post <slug> --context "ZFN 04 event analysis, Jung Chan-sung promotional influence, Korean MMA atmosphere"
-```
-
-The script reads image tags from the markdown, generates real JPG files into the same post folder, and rewrites the markdown paths to the generated filenames.
+- Do not append `참고한 공개 자료`, `출처`, `Sources`, or similar source lists to `index.md`.
+- When you need to preserve the public materials consulted, create or update `content/posts/<slug>/references.md`.
+- Keep `references.md` concise and list-shaped.
+- `index.md` should read like a clean magazine article without bibliography text at the bottom.
 
 ## Output checklist
 
@@ -68,5 +58,6 @@ The script reads image tags from the markdown, generates real JPG files into the
 - `index.md` exists in the correct folder.
 - Frontmatter is valid.
 - The article matches the requested topic and angle.
-- Image captions are concrete and article-relevant.
-- Real image files were generated and referenced in markdown unless explicitly skipped.
+- Image tags are already inserted in markdown at the intended positions.
+- Each image tag uses a concrete, article-relevant description and a plausible relative placeholder filename.
+- Any public-source notes are stored in `references.md`, not in the article body.
