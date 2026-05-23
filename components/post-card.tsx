@@ -15,6 +15,11 @@ export default function PostCard({
   imageFetchPriority = "auto",
 }: PostCardProps) {
   const coverImage = getPostCardImageUrl(post.id, post.coverImage);
+  const mobileCoverImage = getPostCardImageUrl(post.id, post.coverImage, {
+    width: 176,
+    height: 176,
+    quality: 68,
+  });
   const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
 
   return (
@@ -24,6 +29,12 @@ export default function PostCard({
           <div className="row-span-2 overflow-hidden rounded-2xl border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5 md:row-span-3">
             <LoadingImage
               src={coverImage}
+              srcSet={
+                mobileCoverImage && coverImage
+                  ? `${mobileCoverImage} 176w, ${coverImage} 440w`
+                  : undefined
+              }
+              sizes="(max-width: 767px) 88px, 220px"
               alt={coverImageAlt}
               loading={imageLoading}
               fetchPriority={imageFetchPriority}

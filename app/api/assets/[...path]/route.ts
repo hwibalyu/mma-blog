@@ -1,9 +1,11 @@
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import { NextResponse } from "next/server";
 
 const DEFAULT_CACHE_CONTROL = "public, max-age=604800, stale-while-revalidate=86400";
+const TRANSFORM_CACHE_DIR = path.join(process.cwd(), ".next", "cache", "post-assets");
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
 
 export async function GET(
@@ -18,21 +20,24 @@ export async function GET(
   }
 
   const ext = path.extname(assetPath).toLowerCase();
-  const contentType = getContentType(ext);
   const file = fs.readFileSync(assetPath);
-  const transformedImage = await maybeTransformImage(request, file, ext);
-
-  const responseBody = new Uint8Array(transformedImage ?? file);
+  const transformedImage = await maybeTransformImage(request, assetPath, file, ext);
+  const responseBody = new Uint8Array(transformedImage?.body ?? file);
 
   return new NextResponse(responseBody, {
     headers: {
       "Cache-Control": DEFAULT_CACHE_CONTROL,
-      "Content-Type": contentType,
+      "Content-Type": transformedImage?.contentType ?? getContentType(ext),
     },
   });
 }
 
-async function maybeTransformImage(request: Request, file: Buffer, ext: string) {
+async function maybeTransformImage(
+  request: Request,
+  assetPath: string,
+  file: Buffer,
+  ext: string,
+) {
   if (!IMAGE_EXTENSIONS.has(ext)) {
     return null;
   }
@@ -48,6 +53,18 @@ async function maybeTransformImage(request: Request, file: Buffer, ext: string) 
     return null;
   }
 
+  const cachePath = await getTransformCachePath(assetPath, {
+    width,
+    height,
+    quality,
+    fit,
+  });
+  const cachedImage = readCachedTransform(cachePath);
+
+  if (cachedImage) {
+    return { body: cachedImage, contentType: "image/webp" };
+  }
+
   let transformer = sharp(file, { animated: true }).rotate();
 
   if (width || height) {
@@ -59,16 +76,11 @@ async function maybeTransformImage(request: Request, file: Buffer, ext: string) 
     });
   }
 
-  switch (ext) {
-    case ".png":
-      return transformer.png({ quality }).toBuffer();
-    case ".webp":
-      return transformer.webp({ quality }).toBuffer();
-    case ".avif":
-      return transformer.avif({ quality }).toBuffer();
-    default:
-      return transformer.jpeg({ quality, mozjpeg: true }).toBuffer();
-  }
+  const transformedImage = await transformer.webp({ quality }).toBuffer();
+  await fs.promises.mkdir(TRANSFORM_CACHE_DIR, { recursive: true });
+  await fs.promises.writeFile(cachePath, transformedImage);
+
+  return { body: transformedImage, contentType: "image/webp" };
 }
 
 function parsePositiveInt(value: string | null, min: number, max: number) {
@@ -98,6 +110,38 @@ function getContentType(ext: string) {
     default:
       return "application/octet-stream";
   }
+}
+
+async function getTransformCachePath(
+  assetPath: string,
+  params: {
+    width: number | null;
+    height: number | null;
+    quality: number;
+    fit: "cover" | "inside";
+  },
+) {
+  const fileStat = await fs.promises.stat(assetPath);
+  const cacheKey = crypto
+    .createHash("sha1")
+    .update(
+      JSON.stringify({
+        assetPath,
+        updatedAt: fileStat.mtimeMs,
+        ...params,
+      }),
+    )
+    .digest("hex");
+
+  return path.join(TRANSFORM_CACHE_DIR, `${cacheKey}.webp`);
+}
+
+function readCachedTransform(cachePath: string) {
+  if (!fs.existsSync(cachePath)) {
+    return null;
+  }
+
+  return fs.readFileSync(cachePath);
 }
 
 function resolveAssetPath(pathSegments: string[]) {

@@ -75,8 +75,8 @@ export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
               <PostCard
                 key={post.id}
                 post={post}
-                imageLoading={index < 2 ? "eager" : "lazy"}
-                imageFetchPriority={index < 2 ? "high" : "auto"}
+                imageLoading={index === 0 ? "eager" : "lazy"}
+                imageFetchPriority={index === 0 ? "high" : "auto"}
               />
             ))}
           </div>

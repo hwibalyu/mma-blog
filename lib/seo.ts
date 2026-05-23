@@ -79,17 +79,29 @@ export function getPostAssetUrl(postId: string, assetPath?: string | null) {
   return resolvePostAssetUrl(postId, assetPath);
 }
 
-export function getPostCardImageUrl(postId: string, assetPath?: string | null) {
+type PostImageUrlOptions = {
+  width?: number;
+  height?: number;
+  quality?: number;
+  fit?: "cover" | "inside";
+};
+
+export function getPostCardImageUrl(
+  postId: string,
+  assetPath?: string | null,
+  options: PostImageUrlOptions = {},
+) {
   const url = getPostAssetUrl(postId, assetPath);
   if (!url || assetPath?.startsWith("http://") || assetPath?.startsWith("https://")) {
     return url;
   }
 
+  const { width = 440, height = 330, quality = 72, fit = "cover" } = options;
   const nextUrl = new URL(url);
-  nextUrl.searchParams.set("w", "440");
-  nextUrl.searchParams.set("h", "330");
-  nextUrl.searchParams.set("fit", "cover");
-  nextUrl.searchParams.set("q", "72");
+  nextUrl.searchParams.set("w", String(width));
+  nextUrl.searchParams.set("h", String(height));
+  nextUrl.searchParams.set("fit", fit);
+  nextUrl.searchParams.set("q", String(quality));
   return nextUrl.toString();
 }
 
