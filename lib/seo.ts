@@ -74,11 +74,23 @@ export function resolvePostAssetUrl(postId: string, assetPath: string) {
   return absoluteUrl(`/api/assets/${postId}/${normalizedPath}`);
 }
 
-export function getPostOgImage(postId: string, markdown: string, coverImage?: string | null) {
-  const imagePath = coverImage || extractFirstImagePath(markdown);
-  if (!imagePath) return null;
+export function getPostAssetUrl(postId: string, assetPath?: string | null) {
+  if (!assetPath) return null;
+  return resolvePostAssetUrl(postId, assetPath);
+}
 
-  return resolvePostAssetUrl(postId, imagePath);
+export function getPostCardImageUrl(postId: string, assetPath?: string | null) {
+  const url = getPostAssetUrl(postId, assetPath);
+  if (!url || assetPath?.startsWith("http://") || assetPath?.startsWith("https://")) {
+    return url;
+  }
+
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set("w", "440");
+  nextUrl.searchParams.set("h", "330");
+  nextUrl.searchParams.set("fit", "cover");
+  nextUrl.searchParams.set("q", "72");
+  return nextUrl.toString();
 }
 
 export function normalizeIsoDate(value?: string) {

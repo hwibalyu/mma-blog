@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPosts } from "@/lib/data";
-import { absoluteUrl, getCategorySlug, getPostOgImage } from "@/lib/seo";
-
-export const dynamic = "force-dynamic";
+import { absoluteUrl, getCategorySlug, getPostAssetUrl } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getPosts();
@@ -28,8 +26,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: post.updatedAt || undefined,
       changeFrequency: "weekly" as const,
       priority: 0.8,
-      images: getPostOgImage(post.id, post.raw, post.coverImage)
-        ? [getPostOgImage(post.id, post.raw, post.coverImage) as string]
+      images: getPostAssetUrl(post.id, post.coverImage)
+        ? [getPostAssetUrl(post.id, post.coverImage) as string]
         : undefined,
     })),
   ];

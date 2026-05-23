@@ -1,22 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import PostCard from "@/components/post-card";
-import type { Post } from "@/lib/data";
+import type { PostSummary } from "@/lib/data";
 
 const INITIAL_VISIBLE_COUNT = 6;
 const LOAD_MORE_COUNT = 6;
 
 type HomePostFeedProps = {
-  posts: Post[];
+  posts: PostSummary[];
+  query?: string;
 };
 
-export default function HomePostFeed({ posts }: HomePostFeedProps) {
+export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
-  const searchParams = useSearchParams();
-  const query = searchParams.get("q") ?? "";
   const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
+  }, [normalizedQuery]);
+
   const filteredPosts = posts.filter((post) => {
     if (!normalizedQuery) {
       return true;

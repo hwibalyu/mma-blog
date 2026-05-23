@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import HomePostFeed from "@/components/home-post-feed";
+import HomePostFeedSearch from "@/components/home-post-feed-search";
 import { getPosts } from "@/lib/data";
 import { DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
@@ -26,12 +26,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const resolvedSearchParams = await searchParams;
+export default function Home() {
   const posts = getPosts();
   return (
     <div className="flex flex-col gap-3 py-8 md:gap-8">
@@ -45,7 +40,9 @@ export default async function Home({
           미니멀하고 타이포그래피가 중심이 되는, 종합격투기(MMA) 세계에 대한 깊이 있는 통찰과 분석을 제공합니다.
         </p>
       </section>
-      <HomePostFeed posts={posts} key={resolvedSearchParams.q ?? ""} />
+      <Suspense fallback={<HomePostFeed posts={posts} />}>
+        <HomePostFeedSearch posts={posts} />
+      </Suspense>
     </div>
   );
 }

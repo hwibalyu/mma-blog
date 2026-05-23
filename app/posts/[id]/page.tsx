@@ -9,16 +9,14 @@ import LoadingImage from "@/components/loading-image";
 import PostImageLightbox from "@/components/post-image-lightbox";
 import {
   absoluteUrl,
-  extractFirstImageAlt,
-  getPostOgImage,
+  getPostAssetUrl,
+  getPostCardImageUrl,
   getCategorySlug,
   normalizeIsoDate,
   resolvePostAssetUrl,
   SITE_AUTHOR_NAME,
   SITE_NAME,
 } from "@/lib/seo";
-
-export const dynamic = "force-dynamic";
 
 // 빌드 시 정적 생성을 위해 추가 (선택사항이지만 권장)
 export async function generateStaticParams() {
@@ -42,11 +40,8 @@ export async function generateMetadata({
     return {};
   }
 
-  const ogImage = getPostOgImage(post.id, post.raw, post.coverImage);
-  const coverImageAlt =
-    post.coverImageAlt ||
-    extractFirstImageAlt(post.raw) ||
-    `${post.title} 대표 이미지`;
+  const ogImage = getPostAssetUrl(post.id, post.coverImage);
+  const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
 
   return {
     title: post.title,
@@ -97,12 +92,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // 마크다운 파싱 오류(조사 붙임) 해결을 위한 전처리
   // **텍스트** 형태를 감지하여 강제로 HTML <strong> 태그로 변환합니다.
   const processedContent = post.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  const ogImage = getPostOgImage(post.id, post.raw, post.coverImage);
+  const ogImage = getPostAssetUrl(post.id, post.coverImage);
   const categorySlug = getCategorySlug(post.category);
-  const coverImageAlt =
-    post.coverImageAlt ||
-    extractFirstImageAlt(post.raw) ||
-    `${post.title} 대표 이미지`;
+  const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
   const relatedPosts = posts
     .filter((candidate) => candidate.id !== post.id)
     .map((candidate) => {
@@ -313,10 +305,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="grid gap-6 md:gap-8">
             {relatedPosts.map((relatedPost) => {
-              const relatedCoverImage = getPostOgImage(
+              const relatedCoverImage = getPostCardImageUrl(
                 relatedPost.id,
-                relatedPost.raw,
-                relatedPost.coverImage
+                relatedPost.coverImage,
               );
 
               return (
@@ -326,11 +317,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                       <div className="overflow-hidden rounded-2xl border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5">
                         <LoadingImage
                           src={relatedCoverImage}
-                          alt={
-                            relatedPost.coverImageAlt ||
-                            extractFirstImageAlt(relatedPost.raw) ||
-                            `${relatedPost.title} 대표 이미지`
-                          }
+                          alt={relatedPost.coverImageAlt || `${relatedPost.title} 대표 이미지`}
                           wrapperClassName="h-full"
                           className="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] md:aspect-[4/3]"
                         />

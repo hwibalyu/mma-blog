@@ -8,7 +8,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export async function GET() {
-  const posts = getPosts({ includeHidden: true });
+  const posts = getPosts({ includeHidden: true, includeContent: true });
   return NextResponse.json(posts);
 }
 

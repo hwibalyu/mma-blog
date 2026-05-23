@@ -1,13 +1,10 @@
 import Link from "next/link";
-import type { Post } from "@/lib/data";
+import type { PostSummary } from "@/lib/data";
 import LoadingImage from "@/components/loading-image";
-import {
-  extractFirstImageAlt,
-  getPostOgImage,
-} from "@/lib/seo";
+import { getPostCardImageUrl } from "@/lib/seo";
 
 type PostCardProps = {
-  post: Post;
+  post: PostSummary;
   imageLoading?: "eager" | "lazy";
   imageFetchPriority?: "high" | "low" | "auto";
 };
@@ -17,11 +14,8 @@ export default function PostCard({
   imageLoading = "lazy",
   imageFetchPriority = "auto",
 }: PostCardProps) {
-  const coverImage = getPostOgImage(post.id, post.raw, post.coverImage);
-  const coverImageAlt =
-    post.coverImageAlt ||
-    extractFirstImageAlt(post.raw) ||
-    `${post.title} 대표 이미지`;
+  const coverImage = getPostCardImageUrl(post.id, post.coverImage);
+  const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
 
   return (
     <Link href={`/posts/${post.id}`} className="group block">

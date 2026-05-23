@@ -1,11 +1,23 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import { extractFirstImageAlt, extractFirstImagePath } from "@/lib/seo";
 
 const postsDirectory = path.join(process.cwd(), "content/posts");
 
 type GetPostsOptions = {
   includeHidden?: boolean;
+  includeContent?: boolean;
+};
+
+type GetPostsSummaryOptions = {
+  includeHidden?: boolean;
+  includeContent?: false;
+};
+
+type GetPostsContentOptions = {
+  includeHidden?: boolean;
+  includeContent: true;
 };
 
 export type PostValidationIssue =
@@ -16,7 +28,7 @@ export type PostValidationIssue =
   | "missing-cover-image"
   | "missing-cover-image-alt";
 
-export type Post = {
+export type PostSummary = {
   id: string;
   category: string;
   title: string;
@@ -24,14 +36,17 @@ export type Post = {
   date: string;
   author: string;
   tags: string[];
-  content: string;
-  raw: string;
   hidden: boolean;
   displayOrder: number | null;
   updatedAt: string | null;
   coverImage: string | null;
   coverImageAlt: string | null;
   validationIssues: PostValidationIssue[];
+};
+
+export type Post = PostSummary & {
+  content: string;
+  raw: string;
 };
 
 type SortablePost = Post & {
@@ -67,7 +82,9 @@ function validatePostFrontmatter(post: {
   return issues;
 }
 
-export function getPosts(options: GetPostsOptions = {}): Post[] {
+export function getPosts(options: GetPostsContentOptions): Post[];
+export function getPosts(options?: GetPostsSummaryOptions): PostSummary[];
+export function getPosts(options: GetPostsOptions = {}): Array<Post | PostSummary> {
   if (!fs.existsSync(postsDirectory)) return [];
 
   const folders = fs.readdirSync(postsDirectory).filter(file => {
@@ -84,27 +101,34 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
       const fileContents = fs.readFileSync(fullPath, "utf8");
       const matterResult = matter(fileContents);
       const date = matterResult.data.date || "";
+      const content = matterResult.content;
+      const rawCoverImage =
+        typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null;
+      const rawCoverImageAlt =
+        typeof matterResult.data.coverImageAlt === "string"
+          ? matterResult.data.coverImageAlt
+          : null;
+      const coverImage = rawCoverImage || extractFirstImagePath(content);
+      const coverImageAlt = rawCoverImageAlt || extractFirstImageAlt(content);
 
       const post = {
         id,
-        content: matterResult.content,
         category: matterResult.data.category || "Uncategorized",
         title: matterResult.data.title || "Untitled",
         excerpt: matterResult.data.excerpt || "",
         date,
         author: matterResult.data.author || "THE MMA JOURNAL",
         tags: matterResult.data.tags || [],
-        raw: fileContents,
         hidden: matterResult.data.hidden === true,
         updatedAt: stat.mtime.toISOString(),
-        coverImage:
-          typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null,
-        coverImageAlt:
-          typeof matterResult.data.coverImageAlt === "string" ? matterResult.data.coverImageAlt : null,
+        coverImage,
+        coverImageAlt,
         displayOrder:
           typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
             ? matterResult.data.displayOrder
             : null,
+        content,
+        raw: fileContents,
         createdAtMs,
         sortDateMs: resolveSortDateMs(date, createdAtMs),
         sortOrderValue:
@@ -126,13 +150,13 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
       console.error(`Error parsing post ${id}:`, e);
       return {
         id,
-        content: "내용을 파싱할 수 없습니다.",
         category: "Error",
         title: "형식이 잘못된 포스트",
         excerpt: "Frontmatter 형식이 올바르지 않습니다.",
         date: "",
         author: "THE MMA JOURNAL",
         tags: [] as string[],
+        content: "내용을 파싱할 수 없습니다.",
         raw: "",
         hidden: false,
         displayOrder: null,
@@ -162,20 +186,24 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
     })
     .map((post) => ({
       id: post.id,
-      content: post.content,
       category: post.category,
       title: post.title,
       excerpt: post.excerpt,
       date: post.date,
       author: post.author,
       tags: post.tags,
-      raw: post.raw,
       hidden: post.hidden,
       displayOrder: post.displayOrder,
       updatedAt: post.updatedAt,
       coverImage: post.coverImage,
       coverImageAlt: post.coverImageAlt,
       validationIssues: post.validationIssues,
+      ...(options.includeContent
+        ? {
+            content: post.content,
+            raw: post.raw,
+          }
+        : {}),
     }));
 }
 
@@ -191,10 +219,17 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
     const stat = fs.statSync(fullPath);
     const fileContents = fs.readFileSync(fullPath, "utf8");
     const matterResult = matter(fileContents);
+    const content = matterResult.content;
+    const rawCoverImage =
+      typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null;
+    const rawCoverImageAlt =
+      typeof matterResult.data.coverImageAlt === "string"
+        ? matterResult.data.coverImageAlt
+        : null;
 
     const post = {
       id,
-      content: matterResult.content,
+      content,
       category: matterResult.data.category || "Uncategorized",
       title: matterResult.data.title || "Untitled",
       excerpt: matterResult.data.excerpt || "",
@@ -204,10 +239,8 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
       raw: fileContents,
       hidden: matterResult.data.hidden === true,
       updatedAt: stat.mtime.toISOString(),
-      coverImage:
-        typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null,
-      coverImageAlt:
-        typeof matterResult.data.coverImageAlt === "string" ? matterResult.data.coverImageAlt : null,
+      coverImage: rawCoverImage || extractFirstImagePath(content),
+      coverImageAlt: rawCoverImageAlt || extractFirstImageAlt(content),
       displayOrder:
         typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
           ? matterResult.data.displayOrder
