@@ -172,7 +172,35 @@ function resolveAssetPath(pathSegments: string[]) {
     return path.join(baseDir, "__invalid__");
   }
 
-  return candidatePath;
+  if (fs.existsSync(candidatePath)) {
+    return candidatePath;
+  }
+
+  return resolveNormalizedAssetPath(baseDir, decodedSegments);
+}
+
+function resolveNormalizedAssetPath(baseDir: string, decodedSegments: string[]) {
+  const resolvedSegments: string[] = [];
+  let currentDir = baseDir;
+
+  for (const segment of decodedSegments) {
+    if (!fs.existsSync(currentDir) || !fs.statSync(currentDir).isDirectory()) {
+      return path.join(baseDir, "__invalid__");
+    }
+
+    const matchedName = fs
+      .readdirSync(currentDir)
+      .find((entry) => entry.normalize("NFC") === segment.normalize("NFC"));
+
+    if (!matchedName) {
+      return path.join(baseDir, "__invalid__");
+    }
+
+    resolvedSegments.push(matchedName);
+    currentDir = path.join(currentDir, matchedName);
+  }
+
+  return path.join(baseDir, ...resolvedSegments);
 }
 
 function decodePathSegment(segment: string) {

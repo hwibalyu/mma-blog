@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import HomePostFeed from "@/components/home-post-feed";
+import HomePostFeedSkeleton from "@/components/home-post-feed-skeleton";
 import HomePostFeedSearch from "@/components/home-post-feed-search";
 import { getPosts } from "@/lib/data";
 import { DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
@@ -42,7 +42,7 @@ export default function Home() {
           미니멀하고 타이포그래피가 중심이 되는, 종합격투기(MMA) 세계에 대한 깊이 있는 통찰과 분석을 제공합니다.
         </p>
       </section>
-      <Suspense fallback={<HomePostFeed posts={posts} />}>
+      <Suspense fallback={<HomePostFeedSkeleton />}>
         <HomePostFeedSearch posts={posts} />
       </Suspense>
     </div>
