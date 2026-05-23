@@ -15,6 +15,7 @@ type Post = {
   raw: string;
   hidden: boolean;
   displayOrder: number | null;
+  validationIssues?: string[];
 };
 
 type MarkdownNode = {
@@ -72,6 +73,15 @@ function extractFrontmatterTitle(markdown: string) {
 function stripFrontmatter(markdown: string) {
   return markdown.replace(/^---[\s\S]*?---\s*/u, "");
 }
+
+const validationLabelMap: Record<string, string> = {
+  "missing-title": "title 없음",
+  "missing-excerpt": "excerpt 없음",
+  "missing-date": "date 없음",
+  "missing-author": "author 없음",
+  "missing-cover-image": "coverImage 없음",
+  "missing-cover-image-alt": "coverImageAlt 없음",
+};
 
 function markdownToNaverText(markdown: string) {
   const body = preprocessNaverMarkdown(stripFrontmatter(markdown));
@@ -774,7 +784,28 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
                             </button>
                           )}
                           <span className="truncate">/{post.id}</span>
+                          {post.validationIssues && post.validationIssues.length > 0 ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold tracking-[0.14em] text-amber-800">
+                              SEO 점검 필요 {post.validationIssues.length}
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold tracking-[0.14em] text-emerald-800">
+                              SEO 기본값 OK
+                            </span>
+                          )}
                         </div>
+                        {post.validationIssues && post.validationIssues.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {post.validationIssues.map((issue) => (
+                              <span
+                                key={issue}
+                                className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800"
+                              >
+                                {validationLabelMap[issue] ?? issue}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                       {post.hidden ? (
                         <div className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">

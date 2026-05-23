@@ -1,10 +1,13 @@
 ---
 title: '최두호의 다음 한 경기는 왜 더 커졌나: 산토스전 이후 찬사, 정찬성 변수, 핏불-피코 구도까지'
-category: 매치분석
+category: 컬럼
 date: '2026-05-21'
 excerpt: >-
   최두호는 다니엘 산토스를 꺾은 것만으로 끝나지 않았다. 경기 직후 쏟아진 찬사, 정찬성의 5월 21일 SNS가 던진 한국 개최 추측, 그리고
   핏불-아론 피코 구도의 변화까지 겹치며 최두호의 다음 한 경기는 오히려 더 큰 의미를 갖게 됐다.
+author: THE MMA JOURNAL
+coverImage: ./doo-ho-choi-poster-illustration.png
+coverImageAlt: 최두호의 공격성과 경기 분위기를 담은 포스터형 일러스트
 tags:
   - UFC
   - 최두호

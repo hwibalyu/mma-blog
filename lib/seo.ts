@@ -1,6 +1,7 @@
 import path from "path";
 
 export const SITE_NAME = "THE MMA JOURNAL";
+export const SITE_AUTHOR_NAME = SITE_NAME;
 export const DEFAULT_SITE_DESCRIPTION =
   "UFC와 한국 MMA를 깊이 있게 다루는 분석 중심의 종합격투기 저널.";
 
@@ -48,20 +49,36 @@ export function extractFirstImagePath(markdown: string) {
   return rawPath.replace(/^\.\//, "");
 }
 
-export function getPostOgImage(postId: string, markdown: string) {
-  const imagePath = extractFirstImagePath(markdown);
-  if (!imagePath) return null;
+export function extractFirstImageAlt(markdown: string) {
+  const imageMatch = markdown.match(/!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/);
+  if (!imageMatch) return null;
 
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
-  }
+  const [, alt] = imageMatch;
+  return alt || null;
+}
 
-  const normalizedPath = imagePath
+export function normalizeAssetPath(assetPath: string) {
+  return assetPath
+    .replace(/^\.\//, "")
     .split(path.sep)
     .join("/")
     .replace(/^\/+/, "");
+}
 
+export function resolvePostAssetUrl(postId: string, assetPath: string) {
+  if (assetPath.startsWith("http://") || assetPath.startsWith("https://")) {
+    return assetPath;
+  }
+
+  const normalizedPath = normalizeAssetPath(assetPath);
   return absoluteUrl(`/api/assets/${postId}/${normalizedPath}`);
+}
+
+export function getPostOgImage(postId: string, markdown: string, coverImage?: string | null) {
+  const imagePath = coverImage || extractFirstImagePath(markdown);
+  if (!imagePath) return null;
+
+  return resolvePostAssetUrl(postId, imagePath);
 }
 
 export function normalizeIsoDate(value?: string) {

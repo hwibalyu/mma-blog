@@ -8,18 +8,30 @@ type GetPostsOptions = {
   includeHidden?: boolean;
 };
 
+export type PostValidationIssue =
+  | "missing-title"
+  | "missing-excerpt"
+  | "missing-date"
+  | "missing-author"
+  | "missing-cover-image"
+  | "missing-cover-image-alt";
+
 export type Post = {
   id: string;
   category: string;
   title: string;
   excerpt: string;
   date: string;
+  author: string;
   tags: string[];
   content: string;
   raw: string;
   hidden: boolean;
   displayOrder: number | null;
   updatedAt: string | null;
+  coverImage: string | null;
+  coverImageAlt: string | null;
+  validationIssues: PostValidationIssue[];
 };
 
 type SortablePost = Post & {
@@ -33,6 +45,26 @@ function resolveSortDateMs(date: string, fallbackMs: number): number {
 
   const parsed = Date.parse(date);
   return Number.isNaN(parsed) ? fallbackMs : parsed;
+}
+
+function validatePostFrontmatter(post: {
+  title: string;
+  excerpt: string;
+  date: string;
+  author: string;
+  coverImage: string | null;
+  coverImageAlt: string | null;
+}) {
+  const issues: PostValidationIssue[] = [];
+
+  if (!post.title.trim()) issues.push("missing-title");
+  if (!post.excerpt.trim()) issues.push("missing-excerpt");
+  if (!post.date.trim()) issues.push("missing-date");
+  if (!post.author.trim()) issues.push("missing-author");
+  if (!post.coverImage?.trim()) issues.push("missing-cover-image");
+  if (!post.coverImageAlt?.trim()) issues.push("missing-cover-image-alt");
+
+  return issues;
 }
 
 export function getPosts(options: GetPostsOptions = {}): Post[] {
@@ -60,10 +92,15 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
         title: matterResult.data.title || "Untitled",
         excerpt: matterResult.data.excerpt || "",
         date,
+        author: matterResult.data.author || "THE MMA JOURNAL",
         tags: matterResult.data.tags || [],
         raw: fileContents,
         hidden: matterResult.data.hidden === true,
         updatedAt: stat.mtime.toISOString(),
+        coverImage:
+          typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null,
+        coverImageAlt:
+          typeof matterResult.data.coverImageAlt === "string" ? matterResult.data.coverImageAlt : null,
         displayOrder:
           typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
             ? matterResult.data.displayOrder
@@ -75,12 +112,16 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
             ? matterResult.data.displayOrder
             : Number.MAX_SAFE_INTEGER,
       };
+      const validationIssues = validatePostFrontmatter(post);
 
       if (!options.includeHidden && post.hidden) {
         return null;
       }
 
-      return post;
+      return {
+        ...post,
+        validationIssues,
+      };
     } catch (e) {
       console.error(`Error parsing post ${id}:`, e);
       return {
@@ -90,11 +131,21 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
         title: "형식이 잘못된 포스트",
         excerpt: "Frontmatter 형식이 올바르지 않습니다.",
         date: "",
+        author: "THE MMA JOURNAL",
         tags: [] as string[],
         raw: "",
         hidden: false,
         displayOrder: null,
         updatedAt: null,
+        coverImage: null,
+        coverImageAlt: null,
+        validationIssues: [
+          "missing-title",
+          "missing-excerpt",
+          "missing-date",
+          "missing-cover-image",
+          "missing-cover-image-alt",
+        ] as PostValidationIssue[],
         createdAtMs: 0,
         sortDateMs: 0,
         sortOrderValue: Number.MAX_SAFE_INTEGER,
@@ -116,11 +167,15 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
       title: post.title,
       excerpt: post.excerpt,
       date: post.date,
+      author: post.author,
       tags: post.tags,
       raw: post.raw,
       hidden: post.hidden,
       displayOrder: post.displayOrder,
       updatedAt: post.updatedAt,
+      coverImage: post.coverImage,
+      coverImageAlt: post.coverImageAlt,
+      validationIssues: post.validationIssues,
     }));
 }
 
@@ -144,21 +199,30 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
       title: matterResult.data.title || "Untitled",
       excerpt: matterResult.data.excerpt || "",
       date: matterResult.data.date || "",
+      author: matterResult.data.author || "THE MMA JOURNAL",
       tags: matterResult.data.tags || [],
       raw: fileContents,
       hidden: matterResult.data.hidden === true,
       updatedAt: stat.mtime.toISOString(),
+      coverImage:
+        typeof matterResult.data.coverImage === "string" ? matterResult.data.coverImage : null,
+      coverImageAlt:
+        typeof matterResult.data.coverImageAlt === "string" ? matterResult.data.coverImageAlt : null,
       displayOrder:
         typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
           ? matterResult.data.displayOrder
           : null,
     };
+    const validationIssues = validatePostFrontmatter(post);
 
     if (!options.includeHidden && post.hidden) {
       return undefined;
     }
 
-    return post;
+    return {
+      ...post,
+      validationIssues,
+    };
   } catch {
     return undefined;
   }

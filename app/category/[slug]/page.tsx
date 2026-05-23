@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import PostCard from "@/components/post-card";
 import { getPosts } from "@/lib/data";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CATEGORY_MAP } from "@/lib/seo";
 
@@ -72,30 +72,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <p className="text-black/50 dark:text-white/50 font-serif text-lg">이 카테고리에 아직 등록된 글이 없습니다.</p>
         ) : (
           posts.map((post) => (
-            <Link href={`/posts/${post.id}`} key={post.id} className="group block">
-              <article className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 text-sm font-bold tracking-widest text-accent">
-                  <span>{post.category}</span>
-                  <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                  <time className="text-black/40 dark:text-white/40">{post.date}</time>
-                </div>
-                <h3 className="text-2xl md:text-3xl font-black tracking-tight group-hover:underline decoration-2 underline-offset-4 break-keep">
-                  {post.title}
-                </h3>
-                <p className="font-serif text-lg text-black/70 dark:text-white/70 max-w-2xl leading-relaxed break-keep">
-                  {post.excerpt}
-                </p>
-                {post.tags && post.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {post.tags.map(tag => (
-                      <span key={tag} className="px-2 py-1 text-xs font-bold bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 rounded-md">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </article>
-            </Link>
+            <PostCard key={post.id} post={post} />
           ))
         )}
       </section>

@@ -40,6 +40,8 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Do not stop at analysis, suggestions, or replacement paragraphs unless the user explicitly asks for draft-only output.
 - Treat content requests such as "반영", "수정", "다듬어줘", "추가해줘", "줄여줘", and "제목 바꿔줘" as file edit requests.
 - After editing, make sure the requested points are reflected in the actual file contents.
+- Keep or normalize the byline to `author: THE MMA JOURNAL` unless the user explicitly wants a different author field.
+- Tighten `excerpt` when the existing summary is vague, bloated, or weak as search-result copy.
 - If the topic is time-sensitive, treat fact refresh as a required dependency, not optional cleanup.
 - If recent coverage exists, the revised article should reflect not just official facts but also the broader Korean and international media framing where relevant.
 - Unless the passage is clearly analysis, interpretation, or opinion, write only facts that can be supported by evidence or public sources.
@@ -51,6 +53,7 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Keep the tone polished, analytical, and magazine-like.
 - Improve clarity, rhythm, transitions, and section structure.
 - When revising titles, prefer a **single-line, high-impact headline** over a long explanatory chain unless the user asks otherwise.
+- When revising titles for discoverability, move the primary search intent forward: the fighter name, event, matchup, or key issue should appear early when possible.
 - Prefer connected narrative prose over outline-like bullet formatting.
 - Use lists only when they are genuinely necessary for comprehension and prose would make the same point less clear.
 - Do not present multiple points as a list by default. If the same content works cleanly as prose, keep it in prose.
@@ -58,6 +61,8 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - When a `###` section grows long or covers multiple distinct ideas, split it with `####` sub-subheadings so the section is easier to scan.
 - Strengthen technical and tactical MMA analysis where useful.
 - Keep markdown valid and preserve local image references such as `![alt](./fighter-faceoff.jpg)`.
+- When a post has a clear primary image, ensure frontmatter has `coverImage` and `coverImageAlt` that match the intended representative image.
+- Add or refine internal links to strongly related existing posts when that improves context, crawlability, or reader flow.
 - Increase visual emphasis so the article does not read like a flat wall of text.
 
 ## Emphasis rules
@@ -81,6 +86,8 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Do not present unsupported interpretation as straight fact. Attribute analysis, framing, or projection clearly when needed.
 - Do not use inflated wording that overstates momentum, dominance, decline, controversy, or importance without solid support.
 - Preserve frontmatter fields unless the edit requires updating them.
+- If `author`, `coverImage`, or `coverImageAlt` are missing and the edit context makes them clear, add them rather than leaving the frontmatter incomplete.
+- If `excerpt` is too vague for search or share previews, rewrite it instead of preserving weak summary copy.
 - Keep category values aligned with the repo convention: `컬럼` or `해외컬럼`, unless the user requests a different taxonomy.
 - If the user asks for a light edit, prefer surgical wording changes over full rewrites.
 - If you insert a new image slot during an edit, add the actual markdown image tag directly with a concrete caption and a relative placeholder filename the user can later replace with a real file.
@@ -90,6 +97,9 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 ## Revision checklist
 
 - Frontmatter is present and still valid.
+- `author` is set to `THE MMA JOURNAL` unless the request explicitly says otherwise.
+- `coverImage` and `coverImageAlt` are present when the article has a clear representative image.
+- `excerpt` clearly says what the article covers and reads cleanly as search/snippet copy.
 - Title and excerpt still match the revised body.
 - The title is concise, one-line when possible, and carries a strong hook.
 - The article has a strong opening and clear section flow.
@@ -97,6 +107,7 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Multiple points are not turned into list format unless that structure is clearly necessary.
 - Expanded sections feel meaningfully more complete, not just cosmetically longer.
 - Important fighters, techniques, and outcomes are emphasized cleanly with markdown.
+- Strongly relevant existing posts are internally linked where that helps context and navigation.
 - Each major section has enough visual emphasis to be easy to scan.
 - Non-opinion passages stay evidence-based and do not drift into unsupported assertion.
 - The tone stays restrained and avoids overstatement.
