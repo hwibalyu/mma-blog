@@ -42,12 +42,20 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - After editing, make sure the requested points are reflected in the actual file contents.
 - If the topic is time-sensitive, treat fact refresh as a required dependency, not optional cleanup.
 - If recent coverage exists, the revised article should reflect not just official facts but also the broader Korean and international media framing where relevant.
+- Unless the passage is clearly analysis, interpretation, or opinion, write only facts that can be supported by evidence or public sources.
+- Keep claims measured and precise. Do not exaggerate stakes, praise, criticism, certainty, or historical significance beyond what the evidence supports.
 
 ## Editing goals
 
 - Preserve the article's core thesis unless the user asks for a new angle.
 - Keep the tone polished, analytical, and magazine-like.
 - Improve clarity, rhythm, transitions, and section structure.
+- When revising titles, prefer a **single-line, high-impact headline** over a long explanatory chain unless the user asks otherwise.
+- Prefer connected narrative prose over outline-like bullet formatting.
+- Use lists only when they are genuinely necessary for comprehension and prose would make the same point less clear.
+- Do not present multiple points as a list by default. If the same content works cleanly as prose, keep it in prose.
+- When the user asks for a richer piece, deepen the tactical and contextual analysis instead of only lengthening the wording.
+- When a `###` section grows long or covers multiple distinct ideas, split it with `####` sub-subheadings so the section is easier to scan.
 - Strengthen technical and tactical MMA analysis where useful.
 - Keep markdown valid and preserve local image references such as `![alt](./fighter-faceoff.jpg)`.
 - Increase visual emphasis so the article does not read like a flat wall of text.
@@ -60,15 +68,18 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - Use `<mark>...</mark>` for the single most important takeaway line in a section.
 - Use `<u>...</u>` or `<ins>...</ins>` for comparison points, interpretive conclusions, or phrases you want the reader to notice without making them the top headline line.
 - Avoid stacking emphasis on the same sentence. Prefer one primary emphasis style per sentence.
-- If two long paragraphs appear back to back, break the rhythm with a bold sentence or a concise list.
+- If two long paragraphs appear back to back, break the rhythm with a bold sentence before reaching for a concise list.
 - Use quote blocks for thesis lines or the article's strongest interpretive statement.
-- In matchup or round analysis, prefer short bullet summaries when they improve scan-ability.
+- In matchup or round analysis, use short lists sparingly and only when prose would become less clear.
+- If one section contains multiple analytical layers such as context, tactics, and prediction, prefer `####` sub-subheadings rather than one uninterrupted block.
 
 ## Guardrails
 
 - Do not change the folder slug or file path unless the user explicitly asks.
 - Do not invent facts, quotes, records, dates, or results. If a claim looks time-sensitive or uncertain, verify it first.
 - Do not rely on a single recap article when refreshing a live or recent topic.
+- Do not present unsupported interpretation as straight fact. Attribute analysis, framing, or projection clearly when needed.
+- Do not use inflated wording that overstates momentum, dominance, decline, controversy, or importance without solid support.
 - Preserve frontmatter fields unless the edit requires updating them.
 - Keep category values aligned with the repo convention: `컬럼` or `해외컬럼`, unless the user requests a different taxonomy.
 - If the user asks for a light edit, prefer surgical wording changes over full rewrites.
@@ -80,9 +91,15 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 
 - Frontmatter is present and still valid.
 - Title and excerpt still match the revised body.
+- The title is concise, one-line when possible, and carries a strong hook.
 - The article has a strong opening and clear section flow.
+- The revised piece reads as prose first, with lists used only where clearly justified.
+- Multiple points are not turned into list format unless that structure is clearly necessary.
+- Expanded sections feel meaningfully more complete, not just cosmetically longer.
 - Important fighters, techniques, and outcomes are emphasized cleanly with markdown.
 - Each major section has enough visual emphasis to be easy to scan.
+- Non-opinion passages stay evidence-based and do not drift into unsupported assertion.
+- The tone stays restrained and avoids overstatement.
 - Any inserted image tags use concrete descriptions and relative placeholder filenames, not generic names like `image.jpg`.
 - Any reference or source list is stored in `references.md`, not at the bottom of the article body.
 

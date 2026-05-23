@@ -31,6 +31,8 @@ const MARK_OPEN = "\uE000";
 const MARK_CLOSE = "\uE001";
 const UNDERLINE_OPEN = "\uE002";
 const UNDERLINE_CLOSE = "\uE003";
+const NAVER_BODY_FONT_SIZE_PX = 19;
+const NAVER_BLOCKQUOTE_FONT_SIZE_PX = 21;
 
 function escapeHtml(value: string) {
   return value
@@ -44,11 +46,15 @@ function preprocessNaverMarkdown(markdown: string) {
   return markdown
     .replace(/<mark>([\s\S]*?)<\/mark>/gi, `${MARK_OPEN}$1${MARK_CLOSE}`)
     .replace(/<(u|ins)>([\s\S]*?)<\/\1>/gi, `${UNDERLINE_OPEN}$2${UNDERLINE_CLOSE}`)
+    .replace(/\*\*\s+([^*\n][\s\S]*?[^*\n])\s+\*\*/g, "**$1**")
+    .replace(/__\s+([^_\n][\s\S]*?[^_\n])\s+__/g, "__$1__")
     .replace(/<br\s*\/?>/gi, "\n");
 }
 
 function renderDecoratedText(value: string) {
   return escapeHtml(value)
+    .replace(/\*\*([\s\S]+?)\*\*/g, `<strong style="font-weight:800; color:#111;">$1</strong>`)
+    .replace(/__([\s\S]+?)__/g, `<strong style="font-weight:800; color:#111;">$1</strong>`)
     .replaceAll(MARK_OPEN, `<span style="display:inline; background:#ffe27a; box-shadow:inset 0 -0.52em 0 rgba(255,226,122,0.92); font-style:italic; color:#111;">`)
     .replaceAll(MARK_CLOSE, "</span>")
     .replaceAll(
@@ -89,7 +95,7 @@ function markdownToNaverText(markdown: string) {
 }
 
 function paragraphHtml(content: string, extraStyle = "") {
-  return `<p style="margin:0; font-size:17px; color:#222; word-break:keep-all;${extraStyle}">${content || "&nbsp;"}</p>`;
+  return `<p style="margin:0; font-size:${NAVER_BODY_FONT_SIZE_PX}px; color:#222; word-break:keep-all;${extraStyle}">${content || "&nbsp;"}</p>`;
 }
 
 function spacerHtml() {
@@ -176,8 +182,8 @@ function renderBlockNode(node: MarkdownNode, listDepth = 0): string[] {
   switch (node.type) {
     case "heading": {
       const level = node.depth ?? 1;
-      const sizes = ["3em", "2em", "1.17em", "1em", "0.9em", "0.8em"];
-      const headingSize = sizes[level - 1] ?? "1em";
+      const sizes = ["2.6em", "1.9em", "1.55em", "1.32em", "1.18em", "1.08em"];
+      const headingSize = sizes[level - 1] ?? "1.08em";
       return withBlockGap(
         `<p style="font-size:${headingSize}; font-weight:bold; color:#111; word-break:keep-all;">${renderInlineNodes(
           node.children ?? [],
@@ -194,7 +200,11 @@ function renderBlockNode(node: MarkdownNode, listDepth = 0): string[] {
       return withBlockGap(
         `<div style="padding-left:16px; border-left:4px solid #ea384c;">${(node.children ?? [])
           .flatMap((child) => renderBlockNode(child, listDepth))
-          .join("")}</div>`,
+          .join("")
+          .replaceAll(
+            `font-size:${NAVER_BODY_FONT_SIZE_PX}px;`,
+            `font-size:${NAVER_BLOCKQUOTE_FONT_SIZE_PX}px;`,
+          )}</div>`,
         1,
       );
     case "list":
@@ -223,7 +233,7 @@ function renderBlockNode(node: MarkdownNode, listDepth = 0): string[] {
         .join("");
 
       return [
-        `<p style="margin:0; padding-left:${18 + listDepth * 16}px; text-indent:-${14}px; font-size:17px; color:#222; word-break:keep-all;">${escapeHtml(
+        `<p style="margin:0; padding-left:${18 + listDepth * 16}px; text-indent:-${14}px; font-size:${NAVER_BODY_FONT_SIZE_PX}px; color:#222; word-break:keep-all;">${escapeHtml(
           marker,
         )} ${content || "&nbsp;"}</p>`,
         spacerHtml(),
@@ -282,6 +292,13 @@ function reorderIds(ids: string[], fromId: string, toId: string) {
   return next;
 }
 
+function mergeOrderedIds(currentIds: string[], nextPosts: Post[]) {
+  const nextIdSet = new Set(nextPosts.map((post) => post.id));
+  const preservedIds = currentIds.filter((id) => nextIdSet.has(id));
+  const appendedIds = nextPosts.map((post) => post.id).filter((id) => !preservedIds.includes(id));
+  return [...preservedIds, ...appendedIds];
+}
+
 export default function AdminDashboardClient({ initialPosts }: AdminDashboardClientProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [orderedIds, setOrderedIds] = useState<string[]>(() => initialPosts.map((post) => post.id));
@@ -312,7 +329,7 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
 
       const data = (await response.json()) as Post[];
       setPosts(data);
-      setOrderedIds(data.map((post) => post.id));
+      setOrderedIds((currentIds) => mergeOrderedIds(currentIds, data));
       setDateDrafts(Object.fromEntries(data.map((post) => [post.id, post.date])) as Record<string, string>);
       setStatus(data.length ? "글 목록이 갱신되었습니다." : "아직 작성된 글이 없습니다.");
     } catch (error) {

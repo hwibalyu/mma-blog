@@ -4,6 +4,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import PostImageLightbox from "@/components/post-image-lightbox";
 
 export const dynamic = "force-dynamic";
 
@@ -95,27 +96,24 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             ),
             img: ({ src, ...props }) => {
               let finalSrc = src;
-              if (typeof src === 'string' && !src.startsWith('http') && !src.startsWith('/')) {
-                const cleanSrc = src.replace(/^\.\//, '');
+              if (typeof src === "string" && !src.startsWith("http") && !src.startsWith("/")) {
+                const cleanSrc = src.replace(/^\.\//, "");
                 finalSrc = `/api/assets/${post.id}/${cleanSrc}`;
               }
-              
+
               return (
-                <span className="block my-10 overflow-hidden rounded-xl">
-                  <span className="flex max-h-[600px] items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={finalSrc}
-                      className="block max-h-[600px] w-full object-contain"
-                      {...props}
+                <span className="my-10 flex flex-col items-center">
+                  <span className="inline-flex max-w-full flex-col items-center">
+                    <PostImageLightbox
+                      src={typeof finalSrc === "string" ? finalSrc : ""}
                       alt={props.alt || "Post image"}
                     />
+                    {props.alt && (
+                      <span className="mt-3 block w-full rounded-xl bg-black/5 px-4 py-3 text-center text-sm font-medium text-black/50 dark:bg-white/5 dark:text-white/50">
+                        {props.alt}
+                      </span>
+                    )}
                   </span>
-                  {props.alt && (
-                    <span className="block text-center text-sm font-medium text-black/50 dark:text-white/50 py-3 bg-black/5 dark:bg-white/5">
-                      {props.alt}
-                    </span>
-                  )}
                 </span>
               );
             },

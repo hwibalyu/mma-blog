@@ -22,7 +22,15 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 - Do not stop at an outline or draft in chat unless the user explicitly asks for draft-only output.
 - Frontmatter must be valid and use repo conventions.
 - Write in the repository's Korean MMA magazine voice.
+- Prefer a **single-line, high-impact title**. Avoid long, two-part or overloaded titles unless the user explicitly wants a softer magazine headline.
+- Default to prose-first writing. Do not build the article as a stack of bullets unless the user explicitly asks for list format.
+- Use bullets or numbered lists only when they are genuinely necessary for comprehension, such as a tightly bounded comparison or set of fight variables that becomes less clear in prose.
+- Do not turn several adjacent points into a list by habit. If the same material reads cleanly in narrative form, keep it as prose.
+- Make each major section feel fully developed. Expand tactical explanation, context, and matchup logic instead of leaving sections at note-like summary depth.
 - For event, ranking, rumor, or fighter trajectory articles, reflect both Korean and international framing when relevant.
+- When a `###` section becomes long or contains multiple distinct beats, split it with `####` sub-subheadings for readability.
+- Unless the passage is clearly analysis, interpretation, or opinion, write only facts that can be supported by evidence or public sources.
+- Keep claims measured and precise. Do not exaggerate stakes, praise, criticism, certainty, or historical significance beyond what the evidence supports.
 
 ## Image policy
 
@@ -52,12 +60,25 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 - Keep `references.md` concise and list-shaped.
 - `index.md` should read like a clean magazine article without bibliography text at the bottom.
 
+## Guardrails
+
+- Do not present unsupported interpretation as straight fact. Attribute analysis, framing, or projection clearly when needed.
+- Do not use inflated wording that overstates momentum, dominance, decline, controversy, or importance without solid support.
+- When evidence is limited, narrow the claim or write with explicit uncertainty instead of filling the gap with confident language.
+
 ## Output checklist
 
 - Broad fact collection happened before drafting.
 - `index.md` exists in the correct folder.
 - Frontmatter is valid.
 - The article matches the requested topic and angle.
+- The title is ideally one line and lands with a clear, memorable hook.
+- The article reads primarily as connected prose rather than list-driven notes.
+- Multiple points are not turned into list format unless that structure is clearly necessary.
+- Major sections are materially developed, not just briefly summarized.
+- Long sections are broken into readable `####` sub-subheadings where helpful.
+- Non-opinion passages stay evidence-based and do not drift into unsupported assertion.
+- The tone stays restrained and avoids overstatement.
 - Image tags are already inserted in markdown at the intended positions.
 - Each image tag uses a concrete, article-relevant description and a plausible relative placeholder filename.
 - Any public-source notes are stored in `references.md`, not in the article body.

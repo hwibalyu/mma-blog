@@ -93,7 +93,9 @@ You do not need to save this to the repo unless the user asks, but you should ex
 - Do not rely on a single article for the whole piece.
 - Do not infer rankings, records, or event significance without checking.
 - Do not treat rumor as fact.
+- Unless the eventual article is explicitly making analysis or opinion, treat unsupported claims as unusable until they are backed by evidence or public sourcing.
 - When the evidence is mixed, write with calibrated language.
+- Avoid exaggeration in the research handoff. Summaries should stay proportional to what the sourcing actually supports.
 - If a specific YouTube claim or columnist opinion is unverified elsewhere, label it as interpretation rather than fact.
 
 ## Output effect
