@@ -159,36 +159,20 @@ function readCachedTransform(cachePath: string) {
 }
 
 function resolveAssetPath(pathSegments: string[]) {
-  const baseDir = path.join(process.cwd(), "content/posts");
-  const resolvedSegments = resolvePathSegments(baseDir, pathSegments);
-  const candidatePath = path.join(baseDir, ...resolvedSegments);
+  const baseDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "content/posts");
+  const decodedSegments = pathSegments.map(decodePathSegment);
+  const candidatePath = path.resolve(baseDir, ...decodedSegments);
+  const relative = path.relative(baseDir, candidatePath);
 
-  return candidatePath;
-}
-
-function resolvePathSegments(baseDir: string, pathSegments: string[]) {
-  const resolvedSegments: string[] = [];
-  let currentDir = baseDir;
-
-  for (const segment of pathSegments) {
-    const decodedSegment = decodePathSegment(segment);
-
-    if (!fs.existsSync(currentDir) || !fs.statSync(currentDir).isDirectory()) {
-      resolvedSegments.push(decodedSegment);
-      currentDir = path.join(currentDir, decodedSegment);
-      continue;
-    }
-
-    const matchedName = fs
-      .readdirSync(currentDir)
-      .find((entry) => entry.normalize("NFC") === decodedSegment.normalize("NFC"));
-    const resolvedSegment = matchedName ?? decodedSegment;
-
-    resolvedSegments.push(resolvedSegment);
-    currentDir = path.join(currentDir, resolvedSegment);
+  if (
+    relative.startsWith("..") ||
+    path.isAbsolute(relative) ||
+    decodedSegments.some((segment) => !segment || segment === "." || segment === "..")
+  ) {
+    return path.join(baseDir, "__invalid__");
   }
 
-  return resolvedSegments;
+  return candidatePath;
 }
 
 function decodePathSegment(segment: string) {

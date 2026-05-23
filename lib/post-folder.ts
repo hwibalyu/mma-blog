@@ -1,6 +1,9 @@
 import path from "path";
 
-export const postsDirectory = path.join(process.cwd(), "content/posts");
+export const postsDirectory = path.join(
+  /*turbopackIgnore: true*/ process.cwd(),
+  "content/posts",
+);
 
 export function resolvePostDirectory(id: string) {
   const postDir = path.join(postsDirectory, id);
