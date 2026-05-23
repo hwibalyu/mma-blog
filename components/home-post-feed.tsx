@@ -79,7 +79,7 @@ export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
                 key={post.id}
                 post={post}
                 imageLoading="eager"
-                imageFetchPriority={index < 2 ? "high" : "low"}
+                imageFetchPriority={index < INITIAL_VISIBLE_COUNT ? "high" : "auto"}
               />
             ))}
           </div>

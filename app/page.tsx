@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import HomePostFeedSkeleton from "@/components/home-post-feed-skeleton";
-import HomePostFeedSearch from "@/components/home-post-feed-search";
+import HomePostFeed from "@/components/home-post-feed";
 import { getPosts } from "@/lib/data";
 import { DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
@@ -28,8 +26,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+type HomeProps = {
+  searchParams: Promise<{ q?: string | string[] }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
   const posts = getPosts();
+  const { q } = await searchParams;
+  const query = Array.isArray(q) ? q[0] : q ?? "";
+
   return (
     <div className="flex flex-col gap-3 py-8 md:gap-8">
       <section className="flex flex-col gap-4">
@@ -42,9 +47,7 @@ export default function Home() {
           미니멀하고 타이포그래피가 중심이 되는, 종합격투기(MMA) 세계에 대한 깊이 있는 통찰과 분석을 제공합니다.
         </p>
       </section>
-      <Suspense fallback={<HomePostFeedSkeleton />}>
-        <HomePostFeedSearch posts={posts} />
-      </Suspense>
+      <HomePostFeed posts={posts} query={query} />
     </div>
   );
 }

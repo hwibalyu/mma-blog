@@ -59,9 +59,12 @@ export default function LoadingImage({
     <span ref={wrapperRef} className={`relative block ${wrapperClassName}`}>
       {!isLoaded && !hasError ? (
         <span
-          className="pointer-events-none absolute inset-0 animate-pulse bg-black/6 dark:bg-white/8"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/6 dark:bg-white/8"
           aria-hidden="true"
-        />
+        >
+          <span className="absolute inset-0 animate-pulse bg-black/6 dark:bg-white/8" />
+          <span className="relative h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-accent dark:border-white/15" />
+        </span>
       ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
