@@ -1,24 +1,54 @@
+import type { Metadata } from "next";
 import { getPosts } from "@/lib/data";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CATEGORY_MAP } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-const categoryMap: Record<string, string> = {
-  "column": "컬럼",
-  "global-news": "해외컬럼/뉴스",
-  "match-analysis": "매치분석",
-};
-
 export async function generateStaticParams() {
-  return Object.keys(categoryMap).map((slug) => ({
+  return Object.keys(CATEGORY_MAP).map((slug) => ({
     slug,
   }));
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const categoryName = CATEGORY_MAP[slug];
+
+  if (!categoryName) {
+    return {};
+  }
+
+  const description = `${categoryName} 카테고리의 MMA 분석과 칼럼을 모아보세요.`;
+
+  return {
+    title: categoryName,
+    description,
+    alternates: {
+      canonical: `/category/${slug}`,
+    },
+    openGraph: {
+      title: categoryName,
+      description,
+      url: `/category/${slug}`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: categoryName,
+      description,
+    },
+  };
+}
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
-  const categoryName = categoryMap[resolvedParams.slug];
+  const categoryName = CATEGORY_MAP[resolvedParams.slug];
 
   if (!categoryName) {
     notFound();

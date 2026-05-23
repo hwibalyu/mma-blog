@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import Link from "next/link";
+import GoogleAnalytics from "@/components/google-analytics";
+import { absoluteUrl, DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -16,8 +18,49 @@ const notoSerifKr = Noto_Serif_KR({
 });
 
 export const metadata: Metadata = {
-  title: "THE MMA JOURNAL",
-  description: "미니멀리스트 MMA 블로그",
+  metadataBase: new URL(absoluteUrl("/")),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    "MMA",
+    "UFC",
+    "종합격투기",
+    "한국 MMA",
+    "격투기 분석",
+    "UFC 뉴스",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  category: "sports",
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "/",
+    title: SITE_NAME,
+    siteName: SITE_NAME,
+    description: DEFAULT_SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: DEFAULT_SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -25,12 +68,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+    description: DEFAULT_SITE_DESCRIPTION,
+    inLanguage: "ko-KR",
+  };
+
   return (
     <html
       lang="ko"
       className={`${notoSansKr.variable} ${notoSerifKr.variable} antialiased`}
     >
       <body className="font-sans min-h-screen flex flex-col selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black word-break-keep-all">
+        <GoogleAnalytics />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <header className="w-full border-b border-black/10 dark:border-white/10 py-6 px-4 md:px-8">
           <div className="max-w-4xl mx-auto flex items-baseline justify-between">
             <Link href="/" className="text-2xl font-black tracking-tighter uppercase hover:text-accent transition-colors">

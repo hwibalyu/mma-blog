@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPost, getPosts } from "@/lib/data";
 import Link from "next/link";
@@ -5,6 +6,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import PostImageLightbox from "@/components/post-image-lightbox";
+import {
+  absoluteUrl,
+  getPostOgImage,
+  normalizeIsoDate,
+  SITE_NAME,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +21,57 @@ export async function generateStaticParams() {
   return posts.map((post) => ({
     id: post.id,
   }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const post = getPost(id, {
+    includeHidden: process.env.NODE_ENV !== "production",
+  });
+
+  if (!post) {
+    return {};
+  }
+
+  const ogImage = getPostOgImage(post.id, post.raw);
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    keywords: post.tags,
+    alternates: {
+      canonical: `/posts/${post.id}`,
+    },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.excerpt,
+      url: `/posts/${post.id}`,
+      siteName: SITE_NAME,
+      locale: "ko_KR",
+      publishedTime: normalizeIsoDate(post.date),
+      modifiedTime: post.updatedAt || undefined,
+      tags: post.tags,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              alt: post.title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title: post.title,
+      description: post.excerpt,
+      images: ogImage ? [ogImage] : undefined,
+    },
+  };
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,9 +87,35 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // 마크다운 파싱 오류(조사 붙임) 해결을 위한 전처리
   // **텍스트** 형태를 감지하여 강제로 HTML <strong> 태그로 변환합니다.
   const processedContent = post.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const ogImage = getPostOgImage(post.id, post.raw);
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: normalizeIsoDate(post.date),
+    dateModified: post.updatedAt || normalizeIsoDate(post.date),
+    inLanguage: "ko-KR",
+    keywords: post.tags,
+    mainEntityOfPage: absoluteUrl(`/posts/${post.id}`),
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: absoluteUrl("/"),
+    },
+    author: {
+      "@type": "Organization",
+      name: SITE_NAME,
+    },
+    image: ogImage ? [ogImage] : undefined,
+  };
 
   return (
     <article className="flex flex-col gap-8 py-8 md:py-12 max-w-3xl mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Link href="/" className="text-sm font-bold tracking-widest text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors w-fit mb-4">
         ← 목록으로 돌아가기
       </Link>

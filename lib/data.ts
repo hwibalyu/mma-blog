@@ -19,6 +19,7 @@ export type Post = {
   raw: string;
   hidden: boolean;
   displayOrder: number | null;
+  updatedAt: string | null;
 };
 
 type SortablePost = Post & {
@@ -41,7 +42,7 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
     return fs.statSync(path.join(postsDirectory, file)).isDirectory();
   });
 
-  const allPosts = folders.map(id => {
+  const allPosts: SortablePost[] = folders.map((id): SortablePost | null => {
     const fullPath = path.join(postsDirectory, id, "index.md");
     if (!fs.existsSync(fullPath)) return null;
 
@@ -62,6 +63,7 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
         tags: matterResult.data.tags || [],
         raw: fileContents,
         hidden: matterResult.data.hidden === true,
+        updatedAt: stat.mtime.toISOString(),
         displayOrder:
           typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
             ? matterResult.data.displayOrder
@@ -88,10 +90,11 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
         title: "형식이 잘못된 포스트",
         excerpt: "Frontmatter 형식이 올바르지 않습니다.",
         date: "",
-        tags: [],
+        tags: [] as string[],
         raw: "",
         hidden: false,
         displayOrder: null,
+        updatedAt: null,
         createdAtMs: 0,
         sortDateMs: 0,
         sortOrderValue: Number.MAX_SAFE_INTEGER,
@@ -117,6 +120,7 @@ export function getPosts(options: GetPostsOptions = {}): Post[] {
       raw: post.raw,
       hidden: post.hidden,
       displayOrder: post.displayOrder,
+      updatedAt: post.updatedAt,
     }));
 }
 
@@ -129,6 +133,7 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
   }
 
   try {
+    const stat = fs.statSync(fullPath);
     const fileContents = fs.readFileSync(fullPath, "utf8");
     const matterResult = matter(fileContents);
 
@@ -142,6 +147,7 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
       tags: matterResult.data.tags || [],
       raw: fileContents,
       hidden: matterResult.data.hidden === true,
+      updatedAt: stat.mtime.toISOString(),
       displayOrder:
         typeof matterResult.data.displayOrder === "number" && Number.isFinite(matterResult.data.displayOrder)
           ? matterResult.data.displayOrder
