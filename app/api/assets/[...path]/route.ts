@@ -160,26 +160,41 @@ function readCachedTransform(cachePath: string) {
 
 function resolveAssetPath(pathSegments: string[]) {
   const baseDir = path.join(process.cwd(), "content/posts");
-  const candidatePath = path.join(baseDir, ...pathSegments);
+  const resolvedSegments = resolvePathSegments(baseDir, pathSegments);
+  const candidatePath = path.join(baseDir, ...resolvedSegments);
 
-  if (fs.existsSync(candidatePath)) {
-    return candidatePath;
+  return candidatePath;
+}
+
+function resolvePathSegments(baseDir: string, pathSegments: string[]) {
+  const resolvedSegments: string[] = [];
+  let currentDir = baseDir;
+
+  for (const segment of pathSegments) {
+    const decodedSegment = decodePathSegment(segment);
+
+    if (!fs.existsSync(currentDir) || !fs.statSync(currentDir).isDirectory()) {
+      resolvedSegments.push(decodedSegment);
+      currentDir = path.join(currentDir, decodedSegment);
+      continue;
+    }
+
+    const matchedName = fs
+      .readdirSync(currentDir)
+      .find((entry) => entry.normalize("NFC") === decodedSegment.normalize("NFC"));
+    const resolvedSegment = matchedName ?? decodedSegment;
+
+    resolvedSegments.push(resolvedSegment);
+    currentDir = path.join(currentDir, resolvedSegment);
   }
 
-  if (pathSegments.length === 0) {
-    return candidatePath;
+  return resolvedSegments;
+}
+
+function decodePathSegment(segment: string) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
   }
-
-  const directoryPath = path.join(baseDir, ...pathSegments.slice(0, -1));
-  const fileName = pathSegments[pathSegments.length - 1];
-
-  if (!fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
-    return candidatePath;
-  }
-
-  const matchedName = fs
-    .readdirSync(directoryPath)
-    .find((entry) => entry.normalize("NFC") === fileName.normalize("NFC"));
-
-  return matchedName ? path.join(directoryPath, matchedName) : candidatePath;
 }

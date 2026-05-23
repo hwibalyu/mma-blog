@@ -9,11 +9,11 @@ import LoadingImage from "@/components/loading-image";
 import PostImageLightbox from "@/components/post-image-lightbox";
 import {
   absoluteUrl,
+  getPostAssetPath,
   getPostAssetUrl,
   getPostCardImageUrl,
   getCategorySlug,
   normalizeIsoDate,
-  resolvePostAssetUrl,
   SITE_AUTHOR_NAME,
   SITE_NAME,
 } from "@/lib/seo";
@@ -267,7 +267,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             img: ({ src, ...props }) => {
               let finalSrc = src;
               if (typeof src === "string" && !src.startsWith("http") && !src.startsWith("/")) {
-                finalSrc = resolvePostAssetUrl(post.id, src).replace(absoluteUrl("/"), "/");
+                finalSrc = getPostAssetPath(post.id, src);
               }
 
               return (
