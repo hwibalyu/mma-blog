@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PostSummary } from "@/lib/data";
 import LoadingImage from "@/components/loading-image";
+import LinkPendingIndicator from "@/components/link-pending-indicator";
 import { getPostCardImageUrl } from "@/lib/seo";
 
 type PostCardProps = {
@@ -23,7 +24,11 @@ export default function PostCard({
   const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
 
   return (
-    <Link href={`/posts/${post.id}`} className="group block">
+    <Link
+      href={`/posts/${post.id}`}
+      className="group relative block transition-transform duration-150 active:scale-[0.995]"
+    >
+      <LinkPendingIndicator />
       <article className="grid grid-cols-[88px_minmax(0,1fr)] gap-x-4 gap-y-3 md:grid-cols-[220px_minmax(0,1fr)] md:gap-5 md:items-start">
         {coverImage ? (
           <div className="row-span-2 overflow-hidden rounded-2xl border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5 md:row-span-3">
