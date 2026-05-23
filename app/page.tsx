@@ -5,6 +5,8 @@ import HomePostFeedSearch from "@/components/home-post-feed-search";
 import { getPosts } from "@/lib/data";
 import { DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     absolute: SITE_NAME,

@@ -18,6 +18,8 @@ import {
   SITE_NAME,
 } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 // 빌드 시 정적 생성을 위해 추가 (선택사항이지만 권장)
 export async function generateStaticParams() {
   const posts = getPosts();
