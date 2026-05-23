@@ -15,8 +15,11 @@ export default function LoadingImage({
   alt,
   ...props
 }: LoadingImageProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const imageSrc = typeof props.src === "string" ? props.src : "";
+  const [loadedSrc, setLoadedSrc] = useState("");
+  const [errorSrc, setErrorSrc] = useState("");
+  const isLoaded = loadedSrc === imageSrc;
+  const hasError = errorSrc === imageSrc;
 
   return (
     <span className={`relative block ${wrapperClassName}`}>
@@ -30,14 +33,19 @@ export default function LoadingImage({
       ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={(node) => {
+          if (node?.complete && node.naturalWidth > 0 && loadedSrc !== imageSrc) {
+            setLoadedSrc(imageSrc);
+          }
+        }}
         alt={alt}
         className={`${className} transition-opacity duration-300 ${isLoaded || hasError ? "opacity-100" : "opacity-0"}`}
         onLoad={(event) => {
-          setIsLoaded(true);
+          setLoadedSrc(imageSrc);
           onLoad?.(event);
         }}
         onError={(event) => {
-          setHasError(true);
+          setErrorSrc(imageSrc);
           onError?.(event);
         }}
         {...props}

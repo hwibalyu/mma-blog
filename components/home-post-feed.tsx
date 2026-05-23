@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PostCard from "@/components/post-card";
 import type { PostSummary } from "@/lib/data";
 
@@ -13,12 +13,15 @@ type HomePostFeedProps = {
 };
 
 export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
   const normalizedQuery = query.trim().toLowerCase();
-
-  useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE_COUNT);
-  }, [normalizedQuery]);
+  const [visibleState, setVisibleState] = useState({
+    query: normalizedQuery,
+    count: INITIAL_VISIBLE_COUNT,
+  });
+  const visibleCount =
+    visibleState.query === normalizedQuery
+      ? visibleState.count
+      : INITIAL_VISIBLE_COUNT;
 
   const filteredPosts = posts.filter((post) => {
     if (!normalizedQuery) {
@@ -85,7 +88,12 @@ export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => setVisibleCount((count) => count + LOAD_MORE_COUNT)}
+                onClick={() =>
+                  setVisibleState({
+                    query: normalizedQuery,
+                    count: visibleCount + LOAD_MORE_COUNT,
+                  })
+                }
                 className="rounded-full border border-black/15 px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-black transition hover:border-black hover:bg-black hover:text-white dark:border-white/15 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-black"
               >
                 더보기

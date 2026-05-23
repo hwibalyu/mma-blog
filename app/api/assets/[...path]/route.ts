@@ -1,12 +1,20 @@
 import crypto from "crypto";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import sharp from "sharp";
 import { NextResponse } from "next/server";
 
 const DEFAULT_CACHE_CONTROL = "public, max-age=604800, stale-while-revalidate=86400";
-const TRANSFORM_CACHE_DIR = path.join(process.cwd(), ".next", "cache", "post-assets");
+const TRANSFORM_CACHE_DIR = path.join(os.tmpdir(), "mma-blog-post-assets");
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
+
+type TransformOptions = {
+  width: number | null;
+  height: number | null;
+  quality: number;
+  fit: "cover" | "inside";
+};
 
 export async function GET(
   request: Request,
@@ -20,24 +28,30 @@ export async function GET(
   }
 
   const ext = path.extname(assetPath).toLowerCase();
-  const file = fs.readFileSync(assetPath);
-  const transformedImage = await maybeTransformImage(request, assetPath, file, ext);
-  const responseBody = new Uint8Array(transformedImage?.body ?? file);
+  const transformOptions = getTransformOptions(request, ext);
 
-  return new NextResponse(responseBody, {
+  if (transformOptions) {
+    const transformedImage = await getTransformedImage(assetPath, transformOptions);
+
+    return new NextResponse(new Uint8Array(transformedImage), {
+      headers: {
+        "Cache-Control": DEFAULT_CACHE_CONTROL,
+        "Content-Type": "image/webp",
+      },
+    });
+  }
+
+  const file = await fs.promises.readFile(assetPath);
+
+  return new NextResponse(new Uint8Array(file), {
     headers: {
       "Cache-Control": DEFAULT_CACHE_CONTROL,
-      "Content-Type": transformedImage?.contentType ?? getContentType(ext),
+      "Content-Type": getContentType(ext),
     },
   });
 }
 
-async function maybeTransformImage(
-  request: Request,
-  assetPath: string,
-  file: Buffer,
-  ext: string,
-) {
+function getTransformOptions(request: Request, ext: string): TransformOptions | null {
   if (!IMAGE_EXTENSIONS.has(ext)) {
     return null;
   }
@@ -53,34 +67,39 @@ async function maybeTransformImage(
     return null;
   }
 
+  return { width, height, quality, fit };
+}
+
+async function getTransformedImage(assetPath: string, options: TransformOptions) {
   const cachePath = await getTransformCachePath(assetPath, {
-    width,
-    height,
-    quality,
-    fit,
+    width: options.width,
+    height: options.height,
+    quality: options.quality,
+    fit: options.fit,
   });
   const cachedImage = readCachedTransform(cachePath);
 
   if (cachedImage) {
-    return { body: cachedImage, contentType: "image/webp" };
+    return cachedImage;
   }
 
+  const file = await fs.promises.readFile(assetPath);
   let transformer = sharp(file, { animated: true }).rotate();
 
-  if (width || height) {
+  if (options.width || options.height) {
     transformer = transformer.resize({
-      width: width ?? undefined,
-      height: height ?? undefined,
-      fit,
+      width: options.width ?? undefined,
+      height: options.height ?? undefined,
+      fit: options.fit,
       withoutEnlargement: true,
     });
   }
 
-  const transformedImage = await transformer.webp({ quality }).toBuffer();
+  const transformedImage = await transformer.webp({ quality: options.quality }).toBuffer();
   await fs.promises.mkdir(TRANSFORM_CACHE_DIR, { recursive: true });
   await fs.promises.writeFile(cachePath, transformedImage);
 
-  return { body: transformedImage, contentType: "image/webp" };
+  return transformedImage;
 }
 
 function parsePositiveInt(value: string | null, min: number, max: number) {
@@ -114,12 +133,7 @@ function getContentType(ext: string) {
 
 async function getTransformCachePath(
   assetPath: string,
-  params: {
-    width: number | null;
-    height: number | null;
-    quality: number;
-    fit: "cover" | "inside";
-  },
+  params: TransformOptions,
 ) {
   const fileStat = await fs.promises.stat(assetPath);
   const cacheKey = crypto
