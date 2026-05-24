@@ -20,6 +20,14 @@ When the user specifies a target article and asks for changes, update the real m
 When writing or editing articles, increase emphasis density so key arguments, fighter names, turning points, and conclusions are visually highlighted with bold text, quotes, and short lists instead of long flat paragraphs.
 If the article involves live topics, recent events, rankings, rumors, or disputed claims, run `fact-research` first and treat its output as a core dependency.
 
+## `article-review`
+
+When the user asks to review, critique, audit, check, evaluate, or give feedback on an existing MMA article without directly rewriting it, read and follow `skills/article-review/SKILL.md`.
+Treat requests mentioning `$article-review`, `article-review`, `리뷰`, `검토`, `평가`, `체크`, a post slug, a `content/posts/...` path, or a `/posts/...` URL as article review requests when the user is asking for feedback rather than direct edits.
+Default to review-only: do not modify the article file unless the user explicitly asks to apply fixes.
+When reviewing, check factual risk, structure, magazine voice, title/excerpt quality, emphasis density, markdown/frontmatter hygiene, reference placement, and any AI-like meta wording such as `요청하신 대로`.
+If the article involves live topics, recent events, rankings, rumors, or disputed claims, run `fact-research` first and treat its output as a core dependency.
+
 ## `article-create`
 
 When the user asks to write, create, draft, publish, or generate a new MMA column/article/post, read and follow `skills/article-create/SKILL.md` before making changes.

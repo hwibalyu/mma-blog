@@ -6,9 +6,10 @@ import LoadingImage from "@/components/loading-image";
 type PostImageLightboxProps = {
   src: string;
   alt: string;
+  loading?: "eager" | "lazy";
 };
 
-export default function PostImageLightbox({ src, alt }: PostImageLightboxProps) {
+export default function PostImageLightbox({ src, alt, loading = "lazy" }: PostImageLightboxProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,8 @@ export default function PostImageLightbox({ src, alt }: PostImageLightboxProps) 
         <LoadingImage
           src={src}
           alt={alt}
+          loading={loading}
+          decoding="async"
           wrapperClassName="max-w-full overflow-hidden rounded-xl"
           className="block max-h-[600px] w-auto max-w-full rounded-xl object-contain"
         />

@@ -11,10 +11,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
-    const { content } = await request.json();
+    const { content, naverContent } = await request.json();
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
+    }
+
+    if (naverContent !== undefined && typeof naverContent !== "string") {
+      return NextResponse.json({ error: "naverContent must be a string" }, { status: 400 });
     }
 
     const postsDirectory = path.join(process.cwd(), "content/posts");
@@ -29,6 +33,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     fs.writeFileSync(filePath, content, "utf8");
+    if (typeof naverContent === "string") {
+      const naverPath = path.join(postsDirectory, id, "naver.md");
+      if (naverContent.trim()) {
+        fs.writeFileSync(naverPath, naverContent, "utf8");
+      } else if (fs.existsSync(naverPath)) {
+        fs.unlinkSync(naverPath);
+      }
+    }
 
     return NextResponse.json({ success: true, id });
   } catch (error: unknown) {

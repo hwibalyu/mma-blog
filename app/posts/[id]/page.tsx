@@ -9,7 +9,6 @@ import LoadingImage from "@/components/loading-image";
 import PostImageLightbox from "@/components/post-image-lightbox";
 import {
   absoluteUrl,
-  getPostAssetPath,
   getPostAssetUrl,
   getPostCardImageUrl,
   getCategorySlug,
@@ -18,7 +17,7 @@ import {
   SITE_NAME,
 } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 // 빌드 시 정적 생성을 위해 추가 (선택사항이지만 권장)
 export async function generateStaticParams() {
@@ -95,6 +94,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   // **텍스트** 형태를 감지하여 강제로 HTML <strong> 태그로 변환합니다.
   const processedContent = post.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   const ogImage = getPostAssetUrl(post.id, post.coverImage);
+  const coverDisplayImage = getPostCardImageUrl(post.id, post.coverImage, {
+    width: 1200,
+    height: 675,
+    quality: 76,
+  });
   const categorySlug = getCategorySlug(post.category);
   const coverImageAlt = post.coverImageAlt || `${post.title} 대표 이미지`;
   const relatedPosts = posts
@@ -217,11 +221,14 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             ))}
           </div>
         )}
-        {ogImage ? (
+        {coverDisplayImage ? (
           <div className="overflow-hidden rounded-[1.75rem] border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5">
             <LoadingImage
-              src={ogImage}
+              src={coverDisplayImage}
               alt={coverImageAlt}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               wrapperClassName="w-full"
               className="aspect-[16/9] w-full object-cover"
             />
@@ -265,17 +272,22 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               />
             ),
             img: ({ src, ...props }) => {
-              let finalSrc = src;
+              let finalSrc = typeof src === "string" ? src : "";
               if (typeof src === "string" && !src.startsWith("http") && !src.startsWith("/")) {
-                finalSrc = getPostAssetPath(post.id, src);
+                finalSrc = getPostCardImageUrl(post.id, src, {
+                  width: 1200,
+                  quality: 76,
+                  fit: "inside",
+                }) ?? "";
               }
 
               return (
                 <span className="my-5 flex flex-col items-center md:my-10">
                   <span className="inline-flex max-w-full flex-col items-center">
                     <PostImageLightbox
-                      src={typeof finalSrc === "string" ? finalSrc : ""}
+                      src={finalSrc}
                       alt={props.alt || "Post image"}
+                      loading="lazy"
                     />
                     {props.alt && (
                       <span className="mt-3 block w-full rounded-xl bg-black/5 px-4 py-3 text-center text-sm font-medium text-black/50 dark:bg-white/5 dark:text-white/50">

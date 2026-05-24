@@ -159,7 +159,7 @@ function readCachedTransform(cachePath: string) {
 }
 
 function resolveAssetPath(pathSegments: string[]) {
-  const baseDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "content/posts");
+  const baseDir = path.join(process.cwd(), "content", "posts");
   const decodedSegments = pathSegments.map(decodePathSegment);
   const candidatePath = path.resolve(baseDir, ...decodedSegments);
   const relative = path.relative(baseDir, candidatePath);

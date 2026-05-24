@@ -42,6 +42,9 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - After editing, make sure the requested points are reflected in the actual file contents.
 - Keep or normalize the byline to `author: THE MMA JOURNAL` unless the user explicitly wants a different author field.
 - Tighten `excerpt` when the existing summary is vague, bloated, or weak as search-result copy.
+- Remove or rewrite any meta framing that implies the article was produced from a user prompt, request, or AI instruction.
+- Ban phrases such as `요청하신 대로`, `사용자 요청에 따라`, `이번 글에서는 요청대로`, `정리해달라는 취지에 맞춰`, `AI가 작성`, `프롬프트`, or any equivalent wording that reveals the writing process instead of speaking directly to readers.
+- When this kind of wording appears, replace it with a direct magazine-style thesis, scene-setter, or transition.
 - If the topic is time-sensitive, treat fact refresh as a required dependency, not optional cleanup.
 - If recent coverage exists, the revised article should reflect not just official facts but also the broader Korean and international media framing where relevant.
 - Unless the passage is clearly analysis, interpretation, or opinion, write only facts that can be supported by evidence or public sources.
@@ -101,6 +104,7 @@ If the target is ambiguous, inspect the repository and choose the safest exact m
 - `coverImage` and `coverImageAlt` are present when the article has a clear representative image.
 - `excerpt` clearly says what the article covers and reads cleanly as search/snippet copy.
 - Title and excerpt still match the revised body.
+- No sentence implies the piece was written by AI, generated from a prompt, or produced "as requested"; any such wording has been removed.
 - The title is concise, one-line when possible, and carries a strong hook.
 - The article has a strong opening and clear section flow.
 - The revised piece reads as prose first, with lists used only where clearly justified.

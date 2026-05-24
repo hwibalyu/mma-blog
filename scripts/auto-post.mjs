@@ -110,10 +110,15 @@ ${customInstructions}
 {
   "slug": "영문-포스트-id",
   "title": "글 제목",
-  "content": "--- 전체 마크다운 내용 ---"
+  "content": "--- 전체 마크다운 내용 ---",
+  "naverContent": "--- 네이버 블로그용 압축 마크다운 내용 ---"
 }
 
 - date는 반드시 "${currentTime}"로 작성하세요.
+- naverContent는 content의 핵심을 네이버 블로그 라이트 유저용으로 2000~2200자 정도로 압축한 별도 글입니다.
+- naverContent는 짧은 문단, 쉬운 설명, 빠른 결론, 1~2개의 짧은 리스트를 사용하고, YAML Frontmatter를 포함해야 합니다.
+- naverContent에는 원글보다 이미지가 많이 보이도록 본문 중간중간 이미지 태그를 7~8개 넣으세요.
+- 이미지 태그는 사용자가 검색해서 찾기 쉬운 실제성 있는 장면으로 작성하세요. 예: 공식 계체 사진, 페이스오프, 이벤트 포스터, 케이지 액션 스틸, 중계 캡처, 랭킹 그래픽, 기자회견, 파이터 SNS/훈련 사진.
 `;
 
   const prompt = "오늘 가장 화제가 되는 MMA 뉴스를 하나 선정해서 심층 분석 칼럼을 작성해줘.";
@@ -129,10 +134,16 @@ ${customInstructions}
       const altDir = path.join(postsDir, altSlug);
       fs.mkdirSync(altDir, { recursive: true });
       fs.writeFileSync(path.join(altDir, 'index.md'), result.content, 'utf8');
+      if (typeof result.naverContent === 'string' && result.naverContent.trim()) {
+        fs.writeFileSync(path.join(altDir, 'naver.md'), result.naverContent, 'utf8');
+      }
       console.log(`✅ 저장 완료: ${altDir}`);
     } else {
       fs.mkdirSync(newPostDir, { recursive: true });
       fs.writeFileSync(path.join(newPostDir, 'index.md'), result.content, 'utf8');
+      if (typeof result.naverContent === 'string' && result.naverContent.trim()) {
+        fs.writeFileSync(path.join(newPostDir, 'naver.md'), result.naverContent, 'utf8');
+      }
       console.log(`✅ 저장 완료: ${newPostDir}`);
     }
 

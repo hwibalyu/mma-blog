@@ -52,6 +52,24 @@ export async function POST(request: Request) {
 - 결과적으로 imagePrompt만 읽어도 어떤 장면을 생성해야 하는지 바로 떠오를 정도로 구체적이어야 한다.
 `;
 
+    const naverArticleGuide = `
+[네이버 블로그 압축본 작성 규칙]
+- 원글 content와 별도로 naverContent를 반드시 작성한다.
+- naverContent는 같은 주제의 네이버 블로그용 압축 아티클이다. 원글을 복붙하지 말고 라이트 유저가 빠르게 읽도록 재구성한다.
+- 전체 길이는 한국어 기준 2000~2200자 정도를 목표로 한다.
+- 한 문단은 1~3문장으로 짧게 끊고, 문장도 길게 늘이지 않는다.
+- 전문 용어는 쓰되 바로 쉬운 말로 풀어준다.
+- 제목은 검색 키워드를 살리되 너무 무겁지 않게 쓴다.
+- 초반 3문단 안에 "무슨 일인지", "왜 봐야 하는지", "핵심 결론"이 드러나야 한다.
+- 핵심 포인트는 짧은 불렛 리스트를 1~2개 활용한다.
+- bold, 인용구, <mark>를 적절히 쓰되 과하게 꾸미지 않는다.
+- 이미지 태그는 원글보다 많이 넣는다. 본문 중간중간 7~8개의 구체적 플레이스홀더를 배치한다.
+- 이미지 플레이스홀더는 사용자가 검색해서 찾기 쉬운 실제성 있는 장면으로 쓴다. 예: 공식 계체 사진, 페이스오프, 이벤트 포스터, 케이지 액션 스틸, 중계 캡처, 랭킹 그래픽, 기자회견, 파이터 SNS/훈련 사진.
+- 각 이미지 파일명은 장면과 인물이 드러나는 상대 경로로 쓴다. 예: ./fighter-name-weigh-in.jpg, ./event-poster.jpg, ./cage-action-round-two.jpg
+- 참고자료, 출처 목록, 작성 과정 설명, AI 언급은 naverContent 본문에 넣지 않는다.
+- naverContent도 반드시 YAML Frontmatter로 시작한다. title, category, date, excerpt, tags, author를 포함하고 date는 "${currentTime}"로 맞춘다.
+`;
+
     const systemInstruction = `
 당신은 세계 최고의 종합격투기(MMA) 전문 칼럼니스트입니다.
 아래의 [작성 가이드라인]을 엄격히 준수하여 사용자의 요청에 따라 블로그 포스팅을 작성하세요.
@@ -61,11 +79,14 @@ ${customInstructions}
 
 ${imagePromptGuide}
 
+${naverArticleGuide}
+
 반드시 아래 JSON 형식으로 응답하세요 (다른 텍스트는 일절 배제):
 {
   "slug": "영문-소문자-하이픈-조합의-포스트-ID",
   "imagePrompt": "A highly specific English prompt for a realistic MMA article visual",
-  "content": "--- 전체 마크다운 내용 ---"
+  "content": "--- 전체 마크다운 내용 ---",
+  "naverContent": "--- 네이버 블로그용 압축 마크다운 내용 ---"
 }
 
 - slug: 제목의 핵심 키워드를 활용한 영문 URL용 ID. (예: choi-doo-ho-victory-analysis)
@@ -81,6 +102,12 @@ ${imagePromptGuide}
     4. category는 반드시 "컬럼", "해외컬럼/뉴스", "매치분석" 중 하나만 사용할 것.
     5. 본문은 [작성 가이드라인]의 분량과 스타일을 따를 것.
     6. ${includeImages ? "본문 중간중간에 이미지 태그(![설명](./filename.jpg))를 2~3개 적절히 배치할 것." : "본문에 이미지 태그를 절대 포함하지 말 것."}
+- naverContent:
+    1. content의 핵심을 네이버 블로그용으로 압축한 별도 마크다운이다.
+    2. 반드시 '---'로 시작하는 YAML Frontmatter를 포함할 것.
+    3. date 항목은 반드시 "${currentTime}" (현재 날짜와 시간)으로 작성할 것.
+    4. 2000~2200자 정도로, 짧은 문단, 쉬운 표현, 빠른 결론, 1~2개의 짧은 리스트 중심으로 구성할 것.
+    5. ${includeImages ? "원글보다 이미지가 많도록 본문 중간중간 이미지 태그를 7~8개 포함할 것. 검색해서 찾기 쉬운 실제성 있는 장면을 설명하고, 구체적인 상대 파일명을 사용할 것." : "본문에 이미지 태그를 절대 포함하지 말 것."}
 `;
 
     // z.ai API 키 로드 (GEMINI_API_KEY 변수를 재사용하거나 ZAI_API_KEY 사용 가능하도록 대응)
@@ -141,15 +168,19 @@ ${imagePromptGuide}
 
         const parsedResult = JSON.parse(text);
         let finalContent = parsedResult.content;
+        let finalNaverContent =
+          typeof parsedResult.naverContent === "string" ? parsedResult.naverContent : "";
         
         // 날짜 보정 로직 유지
         const dateRegex = /date:\s*["']?\d{4}-\d{2}-\d{2}(\s\d{2}:\d{2}:\d{2})?["']?/;
         finalContent = finalContent.replace(dateRegex, `date: "${currentTime}"`);
+        finalNaverContent = finalNaverContent.replace(dateRegex, `date: "${currentTime}"`);
 
         console.log(`[Generate ZAI] Success with key ${i + 1}`);
 
         return NextResponse.json({ 
           content: finalContent,
+          naverContent: finalNaverContent,
           slug: parsedResult.slug,
           imagePrompt: parsedResult.imagePrompt
         });

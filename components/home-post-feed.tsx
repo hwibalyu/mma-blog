@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PostCard from "@/components/post-card";
 import type { PostSummary } from "@/lib/data";
 
@@ -9,10 +10,11 @@ const LOAD_MORE_COUNT = 6;
 
 type HomePostFeedProps = {
   posts: PostSummary[];
-  query?: string;
 };
 
-export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
+export default function HomePostFeed({ posts }: HomePostFeedProps) {
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") ?? "";
   const normalizedQuery = query.trim().toLowerCase();
   const [visibleState, setVisibleState] = useState({
     query: normalizedQuery,
@@ -78,8 +80,8 @@ export default function HomePostFeed({ posts, query = "" }: HomePostFeedProps) {
               <PostCard
                 key={post.id}
                 post={post}
-                imageLoading="eager"
-                imageFetchPriority={index < INITIAL_VISIBLE_COUNT ? "high" : "auto"}
+                imageLoading={index === 0 ? "eager" : "lazy"}
+                imageFetchPriority={index === 0 ? "high" : "auto"}
               />
             ))}
           </div>

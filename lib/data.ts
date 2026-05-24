@@ -47,6 +47,7 @@ export type PostSummary = {
 export type Post = PostSummary & {
   content: string;
   raw: string;
+  naverRaw: string | null;
 };
 
 type SortablePost = Post & {
@@ -99,6 +100,8 @@ export function getPosts(options: GetPostsOptions = {}): Array<Post | PostSummar
       const stat = fs.statSync(fullPath);
       const createdAtMs = stat.birthtimeMs || stat.ctimeMs || stat.mtimeMs;
       const fileContents = fs.readFileSync(fullPath, "utf8");
+      const naverPath = path.join(postsDirectory, id, "naver.md");
+      const naverRaw = fs.existsSync(naverPath) ? fs.readFileSync(naverPath, "utf8") : null;
       const matterResult = matter(fileContents);
       const date = matterResult.data.date || "";
       const content = matterResult.content;
@@ -129,6 +132,7 @@ export function getPosts(options: GetPostsOptions = {}): Array<Post | PostSummar
             : null,
         content,
         raw: fileContents,
+        naverRaw,
         createdAtMs,
         sortDateMs: resolveSortDateMs(date, createdAtMs),
         sortOrderValue:
@@ -158,6 +162,7 @@ export function getPosts(options: GetPostsOptions = {}): Array<Post | PostSummar
         tags: [] as string[],
         content: "내용을 파싱할 수 없습니다.",
         raw: "",
+        naverRaw: null,
         hidden: false,
         displayOrder: null,
         updatedAt: null,
@@ -202,6 +207,7 @@ export function getPosts(options: GetPostsOptions = {}): Array<Post | PostSummar
         ? {
             content: post.content,
             raw: post.raw,
+            naverRaw: post.naverRaw,
           }
         : {}),
     }));
@@ -218,6 +224,8 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
   try {
     const stat = fs.statSync(fullPath);
     const fileContents = fs.readFileSync(fullPath, "utf8");
+    const naverPath = path.join(postsDirectory, id, "naver.md");
+    const naverRaw = fs.existsSync(naverPath) ? fs.readFileSync(naverPath, "utf8") : null;
     const matterResult = matter(fileContents);
     const content = matterResult.content;
     const rawCoverImage =
@@ -237,6 +245,7 @@ export function getPost(id: string, options: GetPostsOptions = {}): Post | undef
       author: matterResult.data.author || "THE MMA JOURNAL",
       tags: matterResult.data.tags || [],
       raw: fileContents,
+      naverRaw,
       hidden: matterResult.data.hidden === true,
       updatedAt: stat.mtime.toISOString(),
       coverImage: rawCoverImage || extractFirstImagePath(content),

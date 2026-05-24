@@ -4,7 +4,7 @@ import { getPosts } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { CATEGORY_MAP } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   return Object.keys(CATEGORY_MAP).map((slug) => ({

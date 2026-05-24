@@ -65,6 +65,14 @@ export function normalizeAssetPath(assetPath: string) {
     .replace(/^\/+/, "");
 }
 
+function safelyDecodePathSegment(segment: string) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 export function getPostAssetPath(postId: string, assetPath: string) {
   if (assetPath.startsWith("http://") || assetPath.startsWith("https://")) {
     return assetPath;
@@ -72,7 +80,7 @@ export function getPostAssetPath(postId: string, assetPath: string) {
 
   const normalizedPath = normalizeAssetPath(assetPath)
     .split("/")
-    .map((segment) => encodeURIComponent(segment))
+    .map((segment) => encodeURIComponent(safelyDecodePathSegment(segment)))
     .join("/");
 
   return `/api/assets/${encodeURIComponent(postId)}/${normalizedPath}`;
@@ -110,13 +118,19 @@ export function getPostCardImageUrl(
     return url;
   }
 
-  const { width = 440, height = 330, quality = 72, fit = "cover" } = options;
+  const fit = options.fit ?? "cover";
+  const width = options.width ?? 440;
+  const height = options.height ?? (fit === "cover" ? 330 : undefined);
+  const quality = options.quality ?? 72;
   const searchParams = new URLSearchParams({
     w: String(width),
-    h: String(height),
     fit,
     q: String(quality),
   });
+
+  if (height) {
+    searchParams.set("h", String(height));
+  }
 
   return `${url}?${searchParams}`;
 }

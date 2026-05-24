@@ -13,6 +13,7 @@ type Post = {
   date: string;
   excerpt?: string;
   raw: string;
+  naverRaw: string | null;
   hidden: boolean;
   displayOrder: number | null;
   validationIssues?: string[];
@@ -72,6 +73,44 @@ function extractFrontmatterTitle(markdown: string) {
 
 function stripFrontmatter(markdown: string) {
   return markdown.replace(/^---[\s\S]*?---\s*/u, "");
+}
+
+function extractFrontmatterField(markdown: string, field: string) {
+  const pattern = new RegExp(`^---[\\s\\S]*?\\n${field}:\\s*["']?([^"'\n]*?)["']?\\s*(?:\\n|$)`, "m");
+  return markdown.match(pattern)?.[1]?.trim() ?? "";
+}
+
+function escapeYamlString(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function createFallbackNaverMarkdown(post: Post) {
+  const body = stripFrontmatter(post.raw)
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  const excerpt = post.excerpt || extractFrontmatterField(post.raw, "excerpt");
+  const summary = [
+    excerpt ? `**핵심만 먼저 보면,** ${excerpt}` : "",
+    ...paragraphs,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 2200);
+
+  return `---\ntitle: "${escapeYamlString(post.title)}"\ncategory: "${escapeYamlString(
+    post.category,
+  )}"\ndate: "${escapeYamlString(post.date)}"\nexcerpt: "${escapeYamlString(
+    excerpt || post.title,
+  )}"\ntags: []\nauthor: "THE MMA JOURNAL"\n---\n\n${summary}`;
 }
 
 const validationLabelMap: Record<string, string> = {
@@ -323,7 +362,7 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
   const [isTogglingHiddenId, setIsTogglingHiddenId] = useState<string | null>(null);
   const [isSyncingMainOrder, setIsSyncingMainOrder] = useState(false);
   const [isSavingDateId, setIsSavingDateId] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [status, setStatus] = useState(
     initialPosts.length ? "글 목록이 준비되었습니다." : "아직 작성된 글이 없습니다.",
   );
@@ -434,9 +473,11 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
     }
   }
 
-  async function handleCopy(post: Post) {
+  async function handleCopy(post: Post, variant: "full" | "naver") {
     try {
-      const { html, plainText } = createNaverClipboardPayload(post.raw);
+      const markdown =
+        variant === "naver" ? post.naverRaw || createFallbackNaverMarkdown(post) : post.raw;
+      const { html, plainText } = createNaverClipboardPayload(markdown);
       const htmlBlob = new Blob([html], { type: "text/html" });
       const textBlob = new Blob([plainText], { type: "text/plain" });
 
@@ -451,10 +492,15 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
         await navigator.clipboard.writeText(plainText);
       }
 
-      setCopiedId(post.id);
-      setStatus(`"${post.title}" 글을 네이버 블로그용 서식 HTML로 복사했습니다.`);
+      const nextCopiedKey = `${post.id}:${variant}`;
+      setCopiedKey(nextCopiedKey);
+      setStatus(
+        variant === "naver"
+          ? `"${post.title}" 압축 아티클을 네이버 블로그용 서식 HTML로 복사했습니다.`
+          : `"${post.title}" 원글을 네이버 블로그용 서식 HTML로 복사했습니다.`,
+      );
       window.setTimeout(() => {
-        setCopiedId((current) => (current === post.id ? null : current));
+        setCopiedKey((current) => (current === nextCopiedKey ? null : current));
       }, 2000);
     } catch (error) {
       console.error(error);
@@ -817,10 +863,18 @@ export default function AdminDashboardClient({ initialPosts }: AdminDashboardCli
                     <div className="flex flex-wrap gap-2 md:justify-end">
                       <button
                         type="button"
-                        onClick={() => void handleCopy(post)}
+                        onClick={() => void handleCopy(post, "full")}
                         className="rounded-full border border-accent/20 bg-accent/8 px-4 py-2 text-xs font-bold text-accent transition hover:bg-accent hover:text-white"
                       >
-                        {copiedId === post.id ? "복사됨" : "네이버 복사"}
+                        {copiedKey === `${post.id}:full` ? "복사됨" : "원글 복사"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopy(post, "naver")}
+                        className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-600 hover:text-white"
+                        title={post.naverRaw ? "naver.md 압축본 복사" : "naver.md가 없어 원글에서 짧게 추린 복사본을 만듭니다."}
+                      >
+                        {copiedKey === `${post.id}:naver` ? "복사됨" : "압축본 복사"}
                       </button>
                       <button
                         type="button"

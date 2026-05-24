@@ -18,6 +18,12 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 
 - Treat fact collection as the first major phase of the task.
 - Create the real post folder and `index.md` under `content/posts/<slug>/`.
+- Create a separate Naver Blog compression file at `content/posts/<slug>/naver.md` whenever a new article is created.
+- `naver.md` should be a lighter, shorter adaptation of the full MMA Journal article, not a duplicate of `index.md`.
+- Write `naver.md` for light Naver readers: short paragraphs, shorter sentences, quick context, clear conclusion near the top, 1 to 2 compact bullet lists, and roughly 2000 to 2200 Korean characters unless the user asks otherwise.
+- `naver.md` should include more images than the full article: insert 7 to 8 concrete markdown image placeholders across the body.
+- Naver image placeholders should describe images the user can realistically find by searching, such as official weigh-in photos, faceoff shots, event posters, cage action stills, broadcast screenshots, ranking graphics, press conference images, or fighter Instagram/training photos. Use descriptive relative filenames.
+- `naver.md` must include valid YAML Frontmatter with `title`, `category`, `date`, `excerpt`, `tags`, and `author`.
 - If reference notes are needed, store them in `content/posts/<slug>/references.md`, not in the article body.
 - Do not stop at an outline or draft in chat unless the user explicitly asks for draft-only output.
 - Frontmatter must be valid and use repo conventions.
@@ -25,6 +31,9 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 - Frontmatter should include `coverImage` and `coverImageAlt` whenever the article contains or is expected to contain a representative hero image.
 - `excerpt` should be written as search-facing summary copy: ideally 1 to 2 sentences that tell the reader exactly what the article covers and why it matters.
 - Write in the repository's Korean MMA magazine voice.
+- Never write meta framing that implies the article was produced from a user prompt, request, or AI instruction.
+- Ban phrases such as `요청하신 대로`, `사용자 요청에 따라`, `이번 글에서는 요청대로`, `정리해달라는 취지에 맞춰`, `AI가 작성`, `프롬프트`, or any equivalent wording that reveals the writing process instead of speaking directly to readers.
+- Open and transition like a human magazine writer: state the issue, scene, stakes, or thesis directly without mentioning the user's request or the act of generating the article.
 - Prefer a **single-line, high-impact title**. Avoid long, two-part or overloaded titles unless the user explicitly wants a softer magazine headline.
 - Titles should surface the primary search intent early when possible, such as the main fighter name, event name, matchup, ranking question, or controversy angle.
 - Default to prose-first writing. Do not build the article as a stack of bullets unless the user explicitly asks for list format.
@@ -76,12 +85,14 @@ Use this skill when the user asks to create a new MMA column, article, or post.
 
 - Broad fact collection happened before drafting.
 - `index.md` exists in the correct folder.
+- `naver.md` exists in the same folder as a compressed Naver Blog version of the article.
 - Frontmatter is valid.
 - Frontmatter includes `author: THE MMA JOURNAL` unless the request explicitly overrides it.
 - Frontmatter includes `coverImage` and `coverImageAlt` aligned with the article's primary image when a representative image is present.
 - `excerpt` clearly states the article's subject and works as search/snippet copy.
 - The title exposes the main fighter, event, or angle early enough to read well in search results.
 - The article matches the requested topic and angle.
+- No sentence implies the piece was written by AI, generated from a prompt, or produced "as requested"; the article speaks directly to readers.
 - The title is ideally one line and lands with a clear, memorable hook.
 - The article reads primarily as connected prose rather than list-driven notes.
 - Multiple points are not turned into list format unless that structure is clearly necessary.

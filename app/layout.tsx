@@ -1,23 +1,10 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import HeaderSearch from "@/components/header-search";
 import Link from "next/link";
 import { Suspense } from "react";
 import GoogleAnalytics from "@/components/google-analytics";
 import { absoluteUrl, DEFAULT_SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
-
-const notoSansKr = Noto_Sans_KR({
-  variable: "--font-sans-kr",
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
-});
-
-const notoSerifKr = Noto_Serif_KR({
-  variable: "--font-serif-kr",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(absoluteUrl("/")),
@@ -80,10 +67,7 @@ export default function RootLayout({
   };
 
   return (
-    <html
-      lang="ko"
-      className={`${notoSansKr.variable} ${notoSerifKr.variable} antialiased`}
-    >
+    <html lang="ko" className="antialiased">
       <body className="font-sans min-h-screen flex flex-col selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black word-break-keep-all">
         <GoogleAnalytics />
         <script
